@@ -19,7 +19,7 @@ En la pestaña **📷 Identificar**:
 | **➕ Hacer foto de la otra cara** | Si no sale la tuya (por ejemplo, el año está en la otra cara), añade una foto de la otra cara y se vuelve a buscar con las dos. |
 | **✏️ Ninguna es la mía: buscar escribiendo** (en los resultados) | Escribe lo que se lee en la moneda: país, valor y año. |
 
-En cada candidato verás el anverso y el reverso, y qué pistas coinciden (✓ año, ✓ país, ✓ valor…). Si ya la tienes en **🪙 Mis monedas**, sale marcada con **Ya la tienes**. Pulsa **✓ Es esta**: se abre su ficha (valor, metal, peso, diámetro, cecas, leyendas de cada cara…) con un enlace a Numista, y se guarda en **🪙 Mis monedas**. Para quitar una moneda de **🪙 Mis monedas**, ábrela y pulsa **🗑️ Quitar esta moneda**.
+En cada candidato verás el anverso y el reverso, y qué pistas coinciden (✓ año, ✓ país, ✓ valor…). Si ya la tienes en **🪙 Mis monedas**, sale marcada con **Ya la tienes**. Pulsa **✓ Es esta**: se abre su ficha (valor, metal, peso, diámetro, cecas, leyendas de cada cara…) con un enlace a Numista, y se guarda en **🪙 Mis monedas**. En la ficha, **💶 Ver cuánto vale** enseña el precio orientativo de Numista según lo gastada que esté (de «Muy gastada (RC)» a «Sin circular (SC)»), para el año de tu moneda. Para quitar una moneda de **🪙 Mis monedas**, ábrela y pulsa **🗑️ Quitar esta moneda**.
 
 La app está pensada para una persona mayor: letra grande, buen contraste, botones grandes y mensajes sin tecnicismos (lo técnico va plegado en «Detalles técnicos»). Se puede ampliar con dos dedos.
 
@@ -33,7 +33,7 @@ Para usar la web solo hace falta **entrar con tu email y contraseña**. Las llav
 
 Es como un portero: tú le enseñas tu carné (usuario y contraseña) y él, que tiene las llaves, te trae lo que pides.
 
-> Numista da **2.000 consultas al mes** en el plan gratuito, para todos los usuarios juntos. Cada identificación gasta entre 1 y 3, más 1 por cada candidato que se ve en la lista (para saber su metal: hasta 5, y más si pulsas «Ver más»); cada ficha nueva, 1. Las fichas ya vistas y la lista de países se guardan en el móvil 30 días y no gastan cupo.
+> Numista da **2.000 consultas al mes** en el plan gratuito, para todos los usuarios juntos. Cada identificación gasta entre 1 y 3, más 1 por cada candidato que se ve en la lista (para saber su metal: hasta 5, y más si pulsas «Ver más»); cada ficha nueva, 1; ver cuánto vale, 2 la primera vez (los años de la moneda y el precio) y 1 más por cada otro año que elijas. Las fichas ya vistas y la lista de países se guardan en el móvil 30 días y no gastan cupo.
 
 ### Para quien gestiona la app (Supabase, proyecto Muscledex)
 

@@ -1087,3 +1087,54 @@ body.typing .tabbar {
 .nowrap {
   white-space: nowrap;
 }
+
+/* ---------- ¿Cuánto vale? ---------- */
+
+.price-panel {
+  border-color: #a9dfc4;
+  background: #f3fbf7;
+}
+
+select.price-year {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 16px;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+  border: 2px solid #c9c0d9;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+}
+
+.price-list {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px 14px;
+  margin: 16px 0 0;
+  font-size: 1.1rem;
+}
+
+.price-list dt {
+  color: var(--text);
+}
+
+.price-grade {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.price-list dd {
+  margin: 0;
+  font-weight: 800;
+  text-align: right;
+  color: var(--mint-text);
+}
+
+.view .price-note {
+  margin: 14px 0 0;
+  font-size: 1rem;
+  color: var(--muted);
+}

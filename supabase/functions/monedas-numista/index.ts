@@ -2,8 +2,8 @@
 import { CORS, json, checkUser, wrap, getKey } from "../_shared/common.ts";
 
 const BASE_URL = "https://api.numista.com/v3";
-// Solo lo que usa la app: lista de países, búsqueda y ficha.
-const ALLOWED_PATH = /^\/(issuers|types|types\/\d+)$/;
+// Solo lo que usa la app: lista de países, búsqueda, ficha, años de la moneda y sus precios.
+const ALLOWED_PATH = /^\/(issuers|types|types\/\d+|types\/\d+\/issues|types\/\d+\/issues\/\d+\/prices)$/;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });

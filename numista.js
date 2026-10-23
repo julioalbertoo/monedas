@@ -15,7 +15,7 @@ let lastRequestAt = 0;
 
 function readJson(key, fallback) {
   try {
-    return JSON.parse(localStorage.getItem() || "null") || fallback;
+    return JSON.parse(localStorage.getItem(key) || "null") || fallback;
   } catch {
     return fallback;
   }
@@ -293,4 +293,47 @@ export async function getType(id) {
   for (const old of ids.slice(MAX_CACHED_TYPES)) delete cache[old];
   writeJson(KEYS.typeCache, cache);
   return data;
+}
+
+// ---------- Valoración ----------
+
+// Las tiradas de una moneda (una por año y ceca) y sus precios orientativos se guardan 30 días,
+// como las fichas: volver a mirar el precio no gasta cupo.
+const MAX_CACHED_PRICES = 300;
+
+async function cached(name, load) {
+  const cache = readJson(KEYS.priceCache, {});
+  const hit = cache[name];
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
+  const data = await load();
+  cache[name] = { at: Date.now(), data };
+  const names = Object.keys(cache).sort((a, b) => cache[b].at - cache[a].at);
+  for (const old of names.slice(MAX_CACHED_PRICES)) delete cache[old];
+  writeJson(KEYS.priceCache, cache);
+  return data;
+}
+
+// Años (tiradas) de una moneda: [{ id, year, label }]. 1 consulta.
+export function getIssues(typeId) {
+  return cached(`issues:${typeId}`, async () => {
+    const list = await numistaGet(`/types/${encodeURIComponent(typeId)}/issues`, {});
+    return (Array.isArray(list) ? list : []).map((issue) => {
+      const year = issue.gregorian_year ?? issue.year ?? null;
+      const label = [year ?? "Sin fecha", issue.mint_letter && `ceca ${issue.mint_letter}`, issue.comment].filter(Boolean).join(" · ");
+      return { id: issue.id, year, label };
+    });
+  });
+}
+
+// Precio orientativo según el estado de conservación: { currency, prices: [{ grade, price }] }. 1 consulta.
+export function getPrices(typeId, issueId) {
+  return cached(`prices:${typeId}:${issueId}`, async () => {
+    const data = await numistaGet(`/types/${encodeURIComponent(typeId)}/issues/${encodeURIComponent(issueId)}/prices`, {
+      currency: "EUR",
+    });
+    return {
+      currency: data.currency || "EUR",
+      prices: (data.prices || []).filter((p) => p && p.grade && Number(p.price) > 0),
+    };
+  });
 }

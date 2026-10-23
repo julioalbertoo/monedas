@@ -1,7 +1,7 @@
 import { currentUser, signIn, signOut } from "./auth.js";
 import { CONFIG } from "./config.js";
 import { testAiConnection, identify } from "./ai.js";
-import { testNumistaConnection, findCandidates, searchByText, getType, yearRange, typeUrl } from "./numista.js";
+import { testNumistaConnection, findCandidates, searchByText, getType, getIssues, getPrices, yearRange, typeUrl } from "./numista.js";
 import { prepareImage } from "./imaging.js";
 import { rankCandidates } from "./scoring.js";
 import { withFlag } from "./flags.js";
@@ -435,6 +435,104 @@ function sidePicture(sources, caption) {
   return figure;
 }
 
+// ---------- Valoración ----------
+
+// Estados de conservación de Numista, con su nombre en España (de peor a mejor).
+const GRADES = [
+  ["g", "Muy gastada", "RC"],
+  ["vg", "Gastada", "BC"],
+  ["f", "Bien conservada", "BC+"],
+  ["vf", "Muy bien conservada", "MBC"],
+  ["xf", "Excelente", "EBC"],
+  ["au", "Casi sin circular", "SC-"],
+  ["unc", "Sin circular", "SC"],
+];
+
+const money = (amount, currency) =>
+  Number(amount).toLocaleString("es-ES", { style: "currency", currency, maximumFractionDigits: amount < 10 ? 2 : 0 });
+
+// Tabla de precios de un año. Cada año nuevo gasta 1 consulta (luego se guarda 30 días).
+async function showPrices(out, typeId, issue) {
+  const status = el("p", "status loading", "Buscando precios…");
+  out.replaceChildren(status);
+  try {
+    const { currency, prices } = await getPrices(typeId, issue.id);
+    if (!prices.length) {
+      out.replaceChildren(el("p", "price-note", `Numista no tiene precios de ${issue.year ? `${issue.year}` : "esta moneda"}.`));
+      return;
+    }
+    const byGrade = new Map(prices.map((p) => [p.grade, p.price]));
+    const list = el("dl", "price-list");
+    for (const [grade, name, code] of GRADES) {
+      if (!byGrade.has(grade)) continue;
+      const term = el("dt", null, name);
+      term.append(el("span", "price-grade", ` (${code})`));
+      list.append(term, el("dd", null, money(byGrade.get(grade), currency)));
+    }
+    out.replaceChildren(
+      list,
+      el("p", "price-note", "Son precios orientativos de coleccionista. Al venderla, suelen pagar bastante menos.")
+    );
+  } catch (err) {
+    out.replaceChildren(status);
+    status.classList.remove("loading");
+    showError(status, `No he podido ver los precios: ${err.message}`, err.authError);
+  }
+}
+
+// «¿Cuánto vale?»: se piden los precios al pulsar, para no gastar cupo en cada ficha.
+// myYear: el año que leyó Gemini en la foto (o el guardado en «Mis monedas»), para elegirlo solo.
+function pricePanel(typeId, myYear) {
+  const box = el("div", "panel price-panel");
+  box.append(el("p", "panel-title", "💶 ¿Cuánto vale?"));
+  const button = el("button", null, "💶 Ver cuánto vale");
+  button.type = "button";
+  const out = el("div");
+  box.append(button, out);
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    button.textContent = "Buscando…";
+    let issues;
+    try {
+      issues = await getIssues(typeId);
+    } catch (err) {
+      button.disabled = false;
+      button.textContent = "💶 Ver cuánto vale";
+      const status = el("p", "status");
+      showError(status, `No he podido ver los precios: ${err.message}`, err.authError);
+      out.replaceChildren(status);
+      return;
+    }
+    button.remove();
+    if (!issues.length) {
+      out.replaceChildren(el("p", "price-note", "Numista no tiene precios de esta moneda."));
+      return;
+    }
+    const mine = issues.find((issue) => myYear && String(issue.year) === String(myYear));
+    const chosen = mine || (issues.length === 1 ? issues[0] : null);
+    const prices = el("div");
+    // El precio cambia mucho según el año: con varios, se deja elegir.
+    if (issues.length > 1) {
+      const id = `price-year-${typeId}`;
+      const label = el("label", null, mine ? "Año de tu moneda (puedes cambiarlo):" : "¿De qué año es tu moneda?");
+      label.htmlFor = id;
+      const select = el("select", "price-year");
+      select.id = id;
+      if (!chosen) select.append(new Option("Elige el año…", ""));
+      for (const issue of issues) select.append(new Option(issue.label, issue.id, false, issue === chosen));
+      select.addEventListener("change", () => {
+        const issue = issues.find((i) => String(i.id) === select.value);
+        if (issue) showPrices(prices, typeId, issue);
+      });
+      box.insertBefore(label, out);
+      box.insertBefore(select, out);
+    }
+    out.replaceChildren(prices);
+    if (chosen) showPrices(prices, typeId, chosen);
+  });
+  return box;
+}
+
 // coin: ficha (completa o provisional, con lo que ya se sabe del candidato). photos: las fotos del usuario, si las hay.
 function renderDetail(coin, photos = []) {
   const nodes = [];
@@ -458,6 +556,7 @@ function renderDetail(coin, photos = []) {
   if (chips.children.length) nodes.push(chips);
 
   if (coin.full) {
+    nodes.push(pricePanel(coin.id, detailYear));
     nodes.push(
       factList([
         ["Valor", [coin.value, coin.currency].filter(Boolean).join(" · ")],
@@ -505,6 +604,8 @@ let detailRequest = 0;
 let detailReturnView = "results";
 let detailScroll = 0;
 let detailCandidate = null;
+// Año de la moneda del usuario, para elegir solo su precio.
+let detailYear = "";
 
 const BACK_LABELS = {
   results: "← Volver a la lista",
@@ -514,6 +615,7 @@ const BACK_LABELS = {
 // returnView: pantalla a la que lleva "Volver". Desde «Mis monedas» la moneda ya está guardada: no se vuelve a guardar.
 async function openDetail(candidate, { returnView = "results" } = {}) {
   const fromHistory = returnView !== "results";
+  detailYear = fromHistory ? candidate.year || "" : lastClues.year || "";
   if (activeView() !== "detail") {
     detailScroll = window.scrollY;
     pushNav();
@@ -558,6 +660,8 @@ async function openDetail(candidate, { returnView = "results" } = {}) {
       value: coin ? coin.value : "",
       thumb: (coin && coin.obverse?.thumbnail) || candidate.thumb || "",
       reverseThumb: (coin && coin.reverse?.thumbnail) || candidate.reverseThumb || "",
+      // El año leído en la foto: luego «¿Cuánto vale?» lo elige solo.
+      year: detailYear ? String(detailYear) : "",
     });
     if (request === detailRequest) savedNote.textContent = alreadyOwned ? "🪙 Ya estaba en tu colección" : "✓ Guardada en «Mis monedas»";
   } catch {
@@ -592,6 +696,7 @@ function historyItemToCandidate(item) {
     value: item.value || "",
     thumb: item.thumb || "",
     reverseThumb: item.reverseThumb || "",
+    year: item.year || "",
     url: typeUrl(item.type_id),
   };
 }

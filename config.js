@@ -32,6 +32,8 @@ export const CONFIG = {
     typeCache: "monedas_type_cache",
     // Nombres de monedas traducidos al castellano por Gemini (Numista los da en inglés).
     titleCache: "monedas_title_es",
+    // Años de cada moneda y sus precios orientativos en Numista, 30 días.
+    priceCache: "monedas_price_cache",
   },
   IMAGE: {
     maxDim: 1024,
