@@ -754,6 +754,18 @@ input[type="text"]:focus {
   font-size: 0.85rem;
 }
 
+.detail-side-img.coin-empty {
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.coin-tried {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
 /* ---------- Ficha ---------- */
 
 /* Anverso y reverso, uno al lado del otro. */

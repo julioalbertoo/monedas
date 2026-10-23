@@ -138,24 +138,31 @@ function img(className, src, alt = "") {
   return node;
 }
 
-// Foto de Numista. Numista puede negarse a que otras webs enseñen sus fotos, así que se piden sin decir
-// desde qué web vienen; si aun así fallan, a través de wsrv.nl (que solo recibe el enlace público de la foto),
-// y después se prueba la siguiente de la lista (p. ej. la miniatura). Si ninguna carga, lo dice.
+// Foto de Numista. Numista no siempre deja que otras webs enseñen sus fotos (aunque abiertas sueltas sí se ven),
+// así que cada foto se prueba de varias formas hasta que una carga: directa (sin decir desde qué web viene),
+// a través de dos intermediarios de imágenes que solo reciben el enlace público de la foto (wsrv.nl e i0.wp.com,
+// el de WordPress) y otra vez por wsrv con otra dirección, por si se quedó con un fallo pasajero. Después se pasa
+// a la siguiente foto de la lista (p. ej. la miniatura). Si ninguna carga, lo dice.
 // (No se usa el emoji 🪙: en el iPhone parece la foto de una moneda de verdad.)
-const IMAGE_PROXY = "https://wsrv.nl/?w=800&url=";
+const PHOTO_ROUTES = [
+  { name: "directa", url: (src) => src },
+  { name: "wsrv", url: (src) => `https://wsrv.nl/?w=800&url=${encodeURIComponent(src)}` },
+  { name: "wp.com", url: (src) => `https://i0.wp.com/${src.replace(/^https?:\/\//, "")}?ssl=1&w=800` },
+  { name: "wsrv 2", url: (src) => `https://wsrv.nl/?w=800&q=85&url=${encodeURIComponent(src)}` },
+];
 
 function noPhoto(className, text = "Sin foto") {
   return el("span", `${className} coin-empty`, text);
 }
 
-// failedText: lo que se lee en el círculo si hay foto pero no carga.
-function coinImg(className, sources, alt = "", failedText = "Foto no disponible") {
-  const urls = [];
-  for (const src of sources) {
-    if (!src || urls.includes(src)) continue;
-    urls.push(src, `${IMAGE_PROXY}${encodeURIComponent(src)}`);
+// failedText: lo que se lee en el círculo si hay foto pero no carga. tried: se añade qué formas se probaron
+// (solo en la ficha, donde cabe), para saber por dónde falla.
+function coinImg(className, sources, alt = "", failedText = "Foto no disponible", tried = false) {
+  const attempts = [];
+  for (const src of new Set(sources.filter(Boolean))) {
+    for (const route of PHOTO_ROUTES) attempts.push({ name: route.name, url: route.url(src) });
   }
-  if (!urls.length) return noPhoto(className);
+  if (!attempts.length) return noPhoto(className);
   const node = el("img", className);
   node.alt = alt;
   node.loading = "lazy";
@@ -163,10 +170,15 @@ function coinImg(className, sources, alt = "", failedText = "Foto no disponible"
   let attempt = 0;
   node.addEventListener("error", () => {
     attempt += 1;
-    if (attempt < urls.length) node.src = urls[attempt];
-    else node.replaceWith(noPhoto(className, failedText));
+    if (attempt < attempts.length) {
+      node.src = attempts[attempt].url;
+      return;
+    }
+    const empty = noPhoto(className, failedText);
+    if (tried) empty.append(el("small", "coin-tried", [...new Set(attempts.map((a) => a.name))].join(" · ")));
+    node.replaceWith(empty);
   });
-  node.src = urls[0];
+  node.src = attempts[0].url;
   return node;
 }
 
@@ -436,7 +448,7 @@ function sidePicture(sources, caption) {
     link.href = urls[0];
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.append(coinImg("detail-side-img", urls, caption, "Foto no disponible · toca para abrirla en Numista"));
+    link.append(coinImg("detail-side-img", urls, caption, "No carga: toca para verla", true));
     figure.append(link);
   } else {
     figure.append(noPhoto("detail-side-img"));
