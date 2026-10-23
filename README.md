@@ -60,7 +60,7 @@ Pega cada llave en la guía (o en **⚙️ Ajustes**) y pulsa **Probar conexión
 2. Recomendado: **añádela a la pantalla de inicio** (Compartir → Añadir a pantalla de inicio).
 3. Ábrela desde el nuevo icono y vuelve a pegar las dos llaves una vez: la app de la pantalla de inicio guarda sus datos aparte de Safari.
 
-Debajo del título verás la versión (por ejemplo `v0.1.0`). Sirve para comprobar que tienes la última.
+Debajo del título verás la versión (por ejemplo `v1.0.0`). Sirve para comprobar que tienes la última.
 
 ---
 
@@ -71,7 +71,8 @@ Debajo del título verás la versión (por ejemplo `v0.1.0`). Sirve para comprob
 | "La llave de Google Gemini no es válida" / "La llave de Numista no es válida" | Pulsa **Revisar mis llaves en Ajustes**, vuelve a copiarla entera y prueba la conexión. |
 | "Se ha agotado el cupo gratuito de Gemini" | Espera un rato: el cupo se renueva. |
 | "Numista dice que hay demasiadas consultas" | Espera un minuto. Si sigue, se ha gastado el cupo del mes; se renueva el día 1. |
-| "No se pudo contactar con Numista" | Comprueba la conexión. Si tienes internet, puede que Numista no deje consultarla desde una web: habría que poner un puente (ver abajo). |
+| "No se pudo contactar con Numista" | Comprueba la conexión a internet y vuelve a probar. |
+| Una foto dice "No carga: toca para verla" | La foto está en Numista pero no se pudo enseñar dentro de la web. Tócala para verla en Numista. |
 | "No encontré esta moneda en Numista" | Añade la otra cara, haz la foto más de frente o busca escribiendo. |
 | No ves cambios recientes | Comprueba la versión bajo el título y recarga la página. |
 
@@ -95,7 +96,7 @@ Web estática (HTML + CSS + JavaScript sin frameworks) que habla directamente de
 |---|---|
 | `index.html` | Todas las pantallas. También guarda el número de versión. |
 | `styles.css` | Estilos, pensados primero para el móvil (los de Vinilos, con una moneda en vez de un disco). |
-| `app.js` | El "director de orquesta": navegación y flujo foto → IA → Numista → «Mis monedas». |
+| `app.js` | El "director de orquesta": navegación y flujo foto → IA → Numista → «Mis monedas». También enseña las fotos de Numista: como Numista no siempre deja que otras webs las enseñen, si la foto no carga directa se pide a través de [wsrv.nl](https://wsrv.nl) o de [i0.wp.com](https://developer.wordpress.com/docs/photon/) (el servicio de imágenes de WordPress), que solo reciben el enlace público de la foto. |
 | `config.js` | Único sitio con direcciones, modelos de IA y nombres de lo que se guarda. |
 | `ai.js` | La IA: `identify(fotos)` devuelve las pistas de la moneda (país, valor, año…) a partir de una o dos fotos. Si un modelo de Gemini falla, prueba otros. |
 | `numista.js` | Búsquedas en Numista (país + valor + año → país + valor → texto libre), lista de países y ficha de cada moneda. Guarda en el móvil lo que no cambia, para ahorrar cupo. |
@@ -105,9 +106,8 @@ Web estática (HTML + CSS + JavaScript sin frameworks) que habla directamente de
 | `history.js` | «Mis monedas» (en el navegador). |
 | `guide.js` | Textos de la guía de bienvenida: si cambian los menús de Google o Numista, se edita solo aquí. |
 
-**Versiones:** cada publicación sube el número de versión en `index.html`, que también se añade a las direcciones de los archivos (`app.js?v=0.1.0`). Así el móvil descarga siempre la versión nueva.
+**Versiones:** cada publicación sube el número de versión en `index.html`, que también se añade a las direcciones de los archivos (`app.js?v=1.0.0`). Así el móvil descarga siempre la versión nueva.
 
 ### Próximamente
 
 - Copia en la nube de «Mis monedas» (como en Vinilos).
-- Si Numista no deja consultarla desde el navegador: un pequeño puente en Supabase que reenvíe las consultas.
