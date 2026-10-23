@@ -27,30 +27,23 @@ En cada candidato verás el anverso y el reverso, y qué pistas coinciden (✓ a
 
 ---
 
-## Antes de empezar: las dos llaves
+## Antes de empezar: usuario y contraseña
 
-La web necesita dos llaves, como el carné de socio de dos bibliotecas: una para la IA que "lee" la foto (Google Gemini) y otra para buscar en el catálogo (Numista). Son tuyas, gratuitas, y **se guardan solo en tu navegador**: nunca se suben a este repositorio.
+Para usar la web solo hace falta **entrar con tu email y contraseña**. Las llaves de Google Gemini (que "lee" la foto) y de Numista (el catálogo) están guardadas en el servidor (Supabase) y nunca llegan al móvil.
 
-La primera vez que abres la web, una guía de bienvenida te lleva paso a paso.
+Es como un portero: tú le enseñas tu carné (usuario y contraseña) y él, que tiene las llaves, te trae lo que pides.
 
-### 1. Llave de Google Gemini (para leer la foto)
+> Numista da **2.000 consultas al mes** en el plan gratuito, para todos los usuarios juntos. Cada identificación gasta entre 1 y 3; cada ficha nueva, 1. Las fichas ya vistas y la lista de países se guardan en el móvil 30 días y no gastan cupo.
 
-1. Abre [Google AI Studio](https://aistudio.google.com/apikey) e inicia sesión con tu cuenta de Google.
-2. Pulsa **Create API key** y copia la clave (empieza por `AIza`). Es gratis.
+### Para quien gestiona la app (Supabase, proyecto Muscledex)
 
-Si ya usas Vinilos, sirve la misma llave.
-
-### 2. Llave de Numista (para buscar la moneda)
-
-1. Abre la [página de la API de Numista](https://es.numista.com/api/index.php).
-2. Entra con tu cuenta de Numista o créate una (gratis).
-3. Pide tu llave (API key) y cópiala.
-
-> El plan gratuito da **2.000 consultas al mes**. Cada identificación gasta entre 1 y 3; cada ficha nueva, 1. Las fichas ya vistas y la lista de países se guardan en el móvil 30 días y no gastan cupo.
-
-### 3. Pegarlas y comprobarlas
-
-Pega cada llave en la guía (o en **⚙️ Ajustes**) y pulsa **Probar conexión** en las dos. Con las dos en ✅, la web abrirá directamente en Identificar.
+- **Llaves:** son los secretos `GEMINI_KEY` y `NUMISTA_KEY` de las Edge Functions (Supabase → Edge Functions → Secrets).
+- **Funciones:** `monedas-gemini` y `monedas-numista` (código en `supabase/functions`). Comprueban la sesión y que el usuario esté en la tabla `monedas_usuarios` antes de usar las llaves.
+- **Dar acceso a alguien:**
+  1. Crea el usuario en Supabase → Authentication → Users → **Add user** (email y contraseña, con «Auto Confirm User»).
+  2. Añádelo a la lista de Monedas en el SQL Editor:
+     `insert into monedas_usuarios (user_id) select id from auth.users where email = 'su@email.com';`
+- **Quitar el acceso:** `delete from monedas_usuarios where user_id = (select id from auth.users where email = 'su@email.com');`
 
 ---
 
@@ -58,7 +51,7 @@ Pega cada llave en la guía (o en **⚙️ Ajustes**) y pulsa **Probar conexión
 
 1. Abre la web en **Safari** (iPhone) o **Chrome** (Android).
 2. Recomendado: **añádela a la pantalla de inicio** (Compartir → Añadir a pantalla de inicio).
-3. Ábrela desde el nuevo icono y vuelve a pegar las dos llaves una vez: la app de la pantalla de inicio guarda sus datos aparte de Safari.
+3. Ábrela desde el nuevo icono y entra una vez con tu usuario: la app de la pantalla de inicio guarda sus datos aparte de Safari.
 
 Debajo del título verás la versión (por ejemplo `v1.0.0`). Sirve para comprobar que tienes la última.
 
@@ -68,7 +61,9 @@ Debajo del título verás la versión (por ejemplo `v1.0.0`). Sirve para comprob
 
 | Mensaje | Qué hacer |
 |---|---|
-| "La llave de Google Gemini no es válida" / "La llave de Numista no es válida" | Pulsa **Revisar mis llaves en Ajustes**, vuelve a copiarla entera y prueba la conexión. |
+| "Tu sesión ha caducado" | Pulsa **Volver a entrar** y escribe tu email y contraseña. |
+| "Esta cuenta no tiene permiso para usar Monedas" | Falta añadir a ese usuario a la tabla `monedas_usuarios` (ver arriba). |
+| "La llave … guardada en el servidor no es válida" / "Falta configurar la llave en el servidor" | Revisa los secretos `GEMINI_KEY` y `NUMISTA_KEY` en Supabase. |
 | "Se ha agotado el cupo gratuito de Gemini" | Espera un rato: el cupo se renueva. |
 | "Numista dice que hay demasiadas consultas" | Espera un minuto. Si sigue, se ha gastado el cupo del mes; se renueva el día 1. |
 | "No se pudo contactar con Numista" | Comprueba la conexión a internet y vuelve a probar. |
@@ -90,7 +85,7 @@ No hace falta servidor ni instalar nada: son archivos HTML, CSS y JavaScript.
 
 ## Cómo está hecha
 
-Web estática (HTML + CSS + JavaScript sin frameworks) que habla directamente desde el navegador con Google Gemini y con Numista. Buena parte del código viene de Vinilos.
+Web estática (HTML + CSS + JavaScript sin frameworks). El inicio de sesión es de Supabase, y Google Gemini y Numista se consultan a través de dos funciones de Supabase que guardan las llaves. Buena parte del código viene de Vinilos.
 
 | Archivo | Qué hace |
 |---|---|
@@ -102,9 +97,9 @@ Web estática (HTML + CSS + JavaScript sin frameworks) que habla directamente de
 | `numista.js` | Búsquedas en Numista (país + valor + año → país + valor → texto libre), lista de países y ficha de cada moneda. Guarda en el móvil lo que no cambia, para ahorrar cupo. |
 | `scoring.js` | Puntúa cada candidato según las pistas que coinciden. |
 | `imaging.js` | Reduce la foto (lado largo ~1024 px) antes de enviarla a la IA. |
-| `tokens.js` | Guarda y comprueba las llaves (en el navegador). |
+| `auth.js` | Inicio y cierre de sesión (Supabase) y llamadas a las funciones `monedas-gemini` y `monedas-numista`. |
+| `supabase/functions/` | Las dos funciones del servidor: comprueban el usuario y llaman a Gemini y Numista con las llaves guardadas allí. |
 | `history.js` | «Mis monedas» (en el navegador). |
-| `guide.js` | Textos de la guía de bienvenida: si cambian los menús de Google o Numista, se edita solo aquí. |
 
 **Versiones:** cada publicación sube el número de versión en `index.html`, que también se añade a las direcciones de los archivos (`app.js?v=1.0.0`). Así el móvil descarga siempre la versión nueva.
 

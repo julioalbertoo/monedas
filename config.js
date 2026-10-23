@@ -1,7 +1,12 @@
 export const CONFIG = {
+  // Proyecto de Supabase (compartido con Muscledex): inicio de sesión y funciones que guardan las llaves.
+  // La clave publicable se puede enseñar: sin usuario y contraseña no da acceso a nada.
+  SUPABASE: {
+    url: "https://lmfdpetsqmmymbuwbziw.supabase.co",
+    publishableKey: "sb_publishable_EjbC1Y2umbq66ZS-ohAu8g_-BlYQHOd",
+  },
   AI_PROVIDER: {
-    // Google Gemini mediante su entrada compatible con el formato de OpenAI; admite llamadas directas desde el navegador.
-    endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    // Google Gemini (formato compatible con OpenAI), siempre a través de la función monedas-gemini.
     primaryModel: "gemini-flash-latest",
     fallbackModel: "gemini-flash-lite-latest",
     // Más respaldos si los dos de arriba fallan. Cada modelo tiene su propio cupo gratuito.
@@ -18,10 +23,8 @@ export const CONFIG = {
     webUrl: "https://es.numista.com",
   },
   STORAGE_KEYS: {
-    aiKey: "monedas_ai_key",
-    aiVerified: "monedas_ai_verified",
-    numistaKey: "monedas_numista_key",
-    numistaVerified: "monedas_numista_verified",
+    // Llaves de antes de tener usuario y contraseña: se borran del móvil al abrir la app.
+    oldKeys: ["monedas_ai_key", "monedas_ai_verified", "monedas_numista_key", "monedas_numista_verified"],
     history: "monedas_history",
     // "1" = modo explorador (tema oscuro; lo que se identifica no se guarda en «Mis monedas»).
     exploreMode: "monedas_explore_mode",

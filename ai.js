@@ -1,4 +1,5 @@
 import { CONFIG } from "./config.js";
+import { callFunction } from "./auth.js";
 
 const RESPONSE_FIELDS = [
   "issuer",
@@ -83,7 +84,7 @@ function errorMessageFrom(bodyText) {
   }
 }
 
-const INVALID_KEY_MESSAGE = "La llave de Google Gemini no es válida. Revisa que la copiaste entera.";
+const INVALID_KEY_MESSAGE = "La llave de Google Gemini guardada en el servidor no es válida. Avisa a quien gestiona la app.";
 
 function describeError(status, bodyText) {
   const message = errorMessageFrom(bodyText);
@@ -102,29 +103,23 @@ function describeError(status, bodyText) {
   return `Gemini respondió con un error (código ${status}): ${message.slice(0, 200)}`;
 }
 
-async function postChat(aiKey, body, timeoutMs) {
+// La llamada pasa por la función monedas-gemini, que añade la llave. Devuelve la respuesta de Gemini
+// con la misma forma que fetch (ok, status, text) para tratarla igual que antes.
+async function postChat(body, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(CONFIG.AI_PROVIDER.endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${aiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+    const { status, body: text } = await callFunction("monedas-gemini", { action: "chat", body }, controller.signal);
+    return { ok: status >= 200 && status < 300, status, text: async () => text };
   } finally {
     clearTimeout(timer);
   }
 }
 
-async function tryModel(model, aiKey, images) {
+async function tryModel(model, images) {
   let response;
   try {
     response = await postChat(
-      aiKey,
       {
         model,
         messages: buildMessages(model, images),
@@ -138,6 +133,10 @@ async function tryModel(model, aiKey, images) {
     if (err && err.name === "AbortError") {
       return { ok: false, detail: `tiempo agotado (${MODEL_TIMEOUT_MS / 1000} s)` };
     }
+    // Fallo de la sesión o del servidor de Monedas: ningún modelo va a funcionar.
+    if (err && err.server) {
+      return { ok: false, detail: err.message, stop: true, sessionError: Boolean(err.authError) };
+    }
     return { ok: false, detail: `error de red: ${err && err.message ? err.message : err}` };
   }
 
@@ -147,7 +146,7 @@ async function tryModel(model, aiKey, images) {
     return {
       ok: false,
       detail,
-      authError: detail === INVALID_KEY_MESSAGE,
+      stop: detail === INVALID_KEY_MESSAGE,
       quotaError: response.status === 429,
       // 404: Google ha retirado ese modelo; se salta sin contar como fallo.
       notFound: response.status === 404,
@@ -175,16 +174,16 @@ async function tryModel(model, aiKey, images) {
 const BUSY_RETRIES = 2;
 
 // images: lista con una o dos fotos (data URL) de la misma moneda.
-export async function identify(images, aiKey, onAttempt) {
+export async function identify(images, onAttempt) {
   const { primaryModel, fallbackModel } = CONFIG.AI_PROVIDER;
-  const models = [primaryModel, fallbackModel, ...(await backupModels(aiKey))];
+  const models = [primaryModel, fallbackModel, ...(await backupModels())];
   const attempts = [];
   for (const [index, model] of models.entries()) {
     if (onAttempt) onAttempt(model, attempts.at(-1)?.detail, 0);
-    let result = await tryModel(model, aiKey, images);
-    if (result.authError) {
-      // Con la llave mal, ningún modelo va a funcionar: no se gasta tiempo en el resto.
-      return { ok: false, reason: INVALID_KEY_MESSAGE, authError: true, attempts: [...attempts, { model, detail: result.detail }] };
+    let result = await tryModel(model, images);
+    if (result.stop) {
+      // Con la llave mal o sin sesión, ningún modelo va a funcionar: no se gasta tiempo en el resto.
+      return { ok: false, reason: result.detail, authError: result.sessionError, attempts: [...attempts, { model, detail: result.detail }] };
     }
     // Si Gemini está saturado (suele durar segundos), se espera un poco y se reintenta hasta 2 veces.
     // Solo con el modelo principal: con los de respaldo es más rápido pasar al siguiente.
@@ -192,7 +191,7 @@ export async function identify(images, aiKey, onAttempt) {
     for (let retry = 1; retry <= retries && result.busy; retry += 1) {
       if (onAttempt) onAttempt(model, attempts.at(-1)?.detail, retry);
       await new Promise((resolve) => setTimeout(resolve, retry * 4000));
-      result = await tryModel(model, aiKey, images);
+      result = await tryModel(model, images);
     }
     if (result.ok) {
       return { ok: true, data: result.data, modelUsed: model, attempts };
@@ -200,7 +199,6 @@ export async function identify(images, aiKey, onAttempt) {
     attempts.push({
       model,
       detail: result.detail,
-      authError: Boolean(result.authError),
       quotaError: Boolean(result.quotaError),
       notFound: Boolean(result.notFound),
     });
@@ -229,14 +227,10 @@ export async function identify(images, aiKey, onAttempt) {
   };
 }
 
-export async function testAiConnection(aiKey) {
-  if (!aiKey) {
-    return { ok: false, reason: "Falta la llave de Google Gemini." };
-  }
+export async function testAiConnection() {
   let response;
   try {
     response = await postChat(
-      aiKey,
       {
         model: CONFIG.AI_PROVIDER.pingModel,
         messages: [{ role: "user", content: "Responde solo con la palabra: ok" }],
@@ -244,7 +238,8 @@ export async function testAiConnection(aiKey) {
       },
       20000
     );
-  } catch {
+  } catch (err) {
+    if (err && err.server) return { ok: false, reason: err.message, authError: err.authError };
     return { ok: false, reason: "No se pudo contactar con Google Gemini. Comprueba tu conexión a internet." };
   }
   const body = await response.text();
@@ -261,30 +256,15 @@ export async function testAiConnection(aiKey) {
   return { ok: false, reason: `Respuesta inesperada de Gemini: ${body.slice(0, 120)}` };
 }
 
-// Lista de modelos: se pide a la conexión nativa de Gemini.
-const NATIVE_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-
 // Google retira modelos cada pocos meses, así que los de respaldo se le preguntan a Google
-// (con la llave del usuario) en vez de fijarlos en el código. La lista se pide una vez por visita.
+// (a través de la función) en vez de fijarlos en el código. La lista se pide una vez por visita.
 const MAX_BACKUPS = 4;
 let modelNamesPromise = null;
 
-async function fetchModelNames(aiKey) {
-  const names = new Set();
-  let pageToken = "";
-  for (let page = 0; page < 5; page += 1) {
-    const query = new URLSearchParams({ pageSize: "1000" });
-    if (pageToken) query.set("pageToken", pageToken);
-    const response = await fetch(`${NATIVE_BASE}?${query}`, { headers: { "x-goog-api-key": aiKey } });
-    if (!response.ok) throw new Error(`código ${response.status}`);
-    const data = await response.json();
-    for (const m of data.models || []) {
-      if ((m.supportedGenerationMethods || []).includes("generateContent")) names.add(String(m.name).replace(/^models\//, ""));
-    }
-    pageToken = data.nextPageToken;
-    if (!pageToken) break;
-  }
-  return names;
+async function fetchModelNames() {
+  const { status, body } = await callFunction("monedas-gemini", { action: "models" });
+  if (status !== 200) throw new Error(`código ${status}`);
+  return new Set(JSON.parse(body).names || []);
 }
 
 // Versión de un modelo ("gemini-3.8-flash" → 3.8) para probar antes los más nuevos.
@@ -298,10 +278,10 @@ function isUsefulModel(name) {
   return Boolean(gemma) && Number(gemma[1]) >= 12;
 }
 
-async function backupModels(aiKey) {
+async function backupModels() {
   const { primaryModel, fallbackModel, extraModels = [] } = CONFIG.AI_PROVIDER;
   if (!modelNamesPromise) {
-    modelNamesPromise = fetchModelNames(aiKey).catch(() => {
+    modelNamesPromise = fetchModelNames().catch(() => {
       modelNamesPromise = null;
       return null;
     });

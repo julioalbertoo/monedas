@@ -16,19 +16,18 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
   <!-- Pone el tema oscuro del modo explorador antes de pintar, para que no parpadee en claro. -->
   <script>try { if (localStorage.getItem("monedas_explore_mode") === "1") document.documentElement.dataset.theme = "dark"; } catch {}</script>
-  <link rel="stylesheet" href="styles.css?v=1.0.0">
+  <link rel="stylesheet" href="styles.css?v=1.1.0">
   <!-- Al publicar, sustituye la versión en TODO este archivo; cada módulo nuevo debe añadirse aquí. -->
   <script type="importmap">
     {
       "imports": {
-        "./config.js": "./config.js?v=1.0.0",
-        "./tokens.js": "./tokens.js?v=1.0.0",
-        "./guide.js": "./guide.js?v=1.0.0",
-        "./ai.js": "./ai.js?v=1.0.0",
-        "./numista.js": "./numista.js?v=1.0.0",
-        "./imaging.js": "./imaging.js?v=1.0.0",
-        "./scoring.js": "./scoring.js?v=1.0.0",
-        "./history.js": "./history.js?v=1.0.0"
+        "./config.js": "./config.js?v=1.1.0",
+        "./auth.js": "./auth.js?v=1.1.0",
+        "./ai.js": "./ai.js?v=1.1.0",
+        "./numista.js": "./numista.js?v=1.1.0",
+        "./imaging.js": "./imaging.js?v=1.1.0",
+        "./scoring.js": "./scoring.js?v=1.1.0",
+        "./history.js": "./history.js?v=1.1.0"
       }
     }
   </script>
@@ -36,67 +35,39 @@
 <body>
   <header class="app-header">
     <h1><span class="logo-coin" aria-hidden="true"></span>Monedas</h1>
-    <p class="app-version">v1.0.0</p>
+    <p class="app-version">v1.1.0</p>
   </header>
 
   <main id="app">
-    <section id="view-guide" class="view">
-      <div id="guide-screen-intro" class="guide-screen">
+    <section id="view-login" class="view">
+      <div class="hero">
         <div class="hero-coin hero-coin--small" aria-hidden="true"></div>
-        <h2 id="guide-intro-title"></h2>
-        <p id="guide-intro-body" class="guide-body"></p>
-        <button type="button" id="guide-intro-next"></button>
+        <h2>Bienvenido 👋</h2>
+        <p>Identifica tus monedas con una foto y mira su ficha en Numista. Entra con tu usuario.</p>
       </div>
-
-      <div id="guide-screen-ai" class="guide-screen" hidden>
-        <p class="step-pill">Paso 1 de 2</p>
-        <h2 id="guide-ai-title"></h2>
-        <ol id="guide-ai-steps" class="steps"></ol>
-        <a id="guide-ai-link" class="btn btn-soft" target="_blank" rel="noopener"></a>
-        <p id="guide-ai-notice" class="notice"></p>
-        <label id="guide-ai-paste-label" for="guide-ai-input"></label>
-        <input type="password" id="guide-ai-input">
-        <p id="guide-ai-hint" class="hint"></p>
-        <button type="button" id="guide-ai-save"></button>
-        <button type="button" id="guide-ai-back" class="ghost">← Atrás</button>
-      </div>
-
-      <div id="guide-screen-numista" class="guide-screen" hidden>
-        <p class="step-pill">Paso 2 de 2</p>
-        <h2 id="guide-numista-title"></h2>
-        <ol id="guide-numista-steps" class="steps"></ol>
-        <a id="guide-numista-link" class="btn btn-soft" target="_blank" rel="noopener"></a>
-        <p id="guide-numista-notice" class="notice"></p>
-        <label id="guide-numista-paste-label" for="guide-numista-input"></label>
-        <input type="password" id="guide-numista-input">
-        <button type="button" id="guide-numista-save"></button>
-        <button type="button" id="guide-numista-back" class="ghost">← Atrás</button>
-      </div>
+      <form id="login-form" class="panel" novalidate>
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" autocomplete="username" inputmode="email" autocapitalize="off" required>
+        <label for="login-password">Contraseña</label>
+        <input type="password" id="login-password" autocomplete="current-password" required>
+        <button type="submit" id="login-submit">Entrar</button>
+        <p id="login-status" class="status" role="status" aria-live="polite"></p>
+      </form>
     </section>
 
     <section id="view-settings" class="view">
       <h2>Ajustes</h2>
-      <p class="notice">🔒 Tus llaves se guardan solo en este navegador. No las compartas ni hagas capturas de esta pantalla.</p>
-
-      <label for="ai-key-input">Llave de Google Gemini</label>
-      <input type="password" id="ai-key-input" placeholder="AIza...">
-
-      <label for="numista-key-input">Llave de Numista</label>
-      <input type="password" id="numista-key-input" placeholder="Tu llave de la API de Numista">
-
-      <button type="button" id="settings-save">Guardar</button>
-      <p id="settings-status" class="status"></p>
+      <p id="settings-user" class="notice"></p>
 
       <div class="panel">
-        <p class="panel-title">Comprobar que funcionan</p>
+        <p class="panel-title">Comprobar que funciona</p>
         <button type="button" id="settings-test-ai" class="secondary">Probar conexión Gemini</button>
         <p id="settings-test-ai-status" class="status"></p>
         <button type="button" id="settings-test-numista" class="secondary">Probar conexión Numista</button>
         <p id="settings-test-numista-status" class="status"></p>
       </div>
 
-      <p id="settings-open-guide" class="link-like"></p>
-      <button type="button" id="settings-clear" class="ghost danger">Borrar llaves</button>
+      <button type="button" id="settings-logout" class="ghost danger">Cerrar sesión</button>
     </section>
 
     <section id="view-capture" class="view">
@@ -181,6 +152,6 @@
     <button type="button" data-view="settings"><span aria-hidden="true">⚙️</span>Ajustes</button>
   </nav>
 
-  <script type="module" src="app.js?v=1.0.0"></script>
+  <script type="module" src="app.js?v=1.1.0"></script>
 </body>
 </html>

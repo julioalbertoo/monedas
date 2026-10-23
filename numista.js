@@ -1,6 +1,7 @@
 import { CONFIG } from "./config.js";
+import { callFunction } from "./auth.js";
 
-const { baseUrl, lang, webUrl } = CONFIG.NUMISTA;
+const { lang, webUrl } = CONFIG.NUMISTA;
 const KEYS = CONFIG.STORAGE_KEYS;
 
 // Numista no publica un límite por minuto, pero cuenta cada consulta (2.000 al mes gratis): se va despacio.
@@ -14,7 +15,7 @@ let lastRequestAt = 0;
 
 function readJson(key, fallback) {
   try {
-    return JSON.parse(localStorage.getItem(key) || "null") || fallback;
+    return JSON.parse(localStorage.getItem() || "null") || fallback;
   } catch {
     return fallback;
   }
@@ -40,7 +41,7 @@ function errorDetail(bodyText) {
 
 function interpretStatus(status, bodyText) {
   if (status === 401 || status === 403) {
-    return "La llave de Numista no es válida. Revisa que la copiaste entera.";
+    return "La llave de Numista guardada en el servidor no es válida. Avisa a quien gestiona la app.";
   }
   if (status === 429) {
     return "Numista dice que hay demasiadas consultas. Espera un minuto; si sigue, se ha agotado el cupo del mes (2.000 en el plan gratuito), que se renueva el día 1.";
@@ -52,42 +53,41 @@ function interpretStatus(status, bodyText) {
   return `Numista respondió con un error inesperado (código ${status})${detail ? `: ${detail.slice(0, 160)}` : "."}`;
 }
 
-async function numistaGet(path, params, key) {
+// La consulta pasa por la función monedas-numista, que añade la llave.
+async function numistaGet(path, params) {
   const wait = lastRequestAt + MIN_GAP_MS - Date.now();
   if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
   lastRequestAt = Date.now();
 
-  const query = new URLSearchParams({ lang, ...params });
-  let response;
+  let result;
   try {
-    response = await fetch(`${baseUrl}${path}?${query}`, { headers: { "Numista-API-Key": key } });
-  } catch {
-    // Sin respuesta: o no hay internet, o el navegador ha bloqueado la consulta (CORS).
+    result = await callFunction("monedas-numista", { path, params: { lang, ...params } });
+  } catch (err) {
+    // Fallo de la sesión o del servidor de Monedas: el error ya trae su explicación.
+    if (err && err.server) throw err;
     const error = new Error(
-      navigator.onLine === false
-        ? "No hay conexión a internet."
-        : "No se pudo contactar con Numista. Comprueba tu conexión; si tienes internet, puede que Numista no deje consultarla desde esta web."
+      navigator.onLine === false ? "No hay conexión a internet." : "No se pudo contactar con Numista. Comprueba tu conexión."
     );
     error.network = true;
     throw error;
   }
-  if (!response.ok) {
-    const error = new Error(interpretStatus(response.status, await response.text().catch(() => "")));
-    error.authError = response.status === 401 || response.status === 403;
-    error.status = response.status;
+  const { status, body } = result;
+  if (status < 200 || status >= 300) {
+    const error = new Error(interpretStatus(status, body));
+    error.status = status;
     throw error;
   }
-  return response.json();
+  return JSON.parse(body);
 }
 
 // ---------- Países y emisores ----------
 
 // Lista de emisores de Numista ({ code, name }), en castellano y en inglés para casar mejor
 // el nombre que da la IA. Se guarda 30 días: son 2 consultas al mes.
-async function fetchIssuers(key) {
+async function fetchIssuers() {
   const [es, en] = await Promise.all([
-    numistaGet("/issuers", {}, key),
-    numistaGet("/issuers", { lang: "en" }, key),
+    numistaGet("/issuers", {}),
+    numistaGet("/issuers", { lang: "en" }),
   ]);
   const byCode = new Map();
   for (const list of [es.issuers || [], en.issuers || []]) {
@@ -103,12 +103,12 @@ async function fetchIssuers(key) {
   return issuers;
 }
 
-async function getIssuers(key) {
+async function getIssuers() {
   const cached = readJson(KEYS.issuersCache, null);
   if (cached && Array.isArray(cached.issuers) && cached.issuers.length && Date.now() - cached.at < CACHE_MS) {
     return cached.issuers;
   }
-  return fetchIssuers(key);
+  return fetchIssuers();
 }
 
 // Texto comparable: sin tildes, en minúsculas y sin signos. "España" → "espana".
@@ -131,15 +131,12 @@ export function matchIssuer(clues, issuers) {
   return prefix ? prefix.code : "";
 }
 
-export async function testNumistaConnection(key) {
-  if (!key) {
-    return { ok: false, reason: "Falta la llave de Numista." };
-  }
+export async function testNumistaConnection() {
   try {
-    const issuers = await fetchIssuers(key);
+    const issuers = await fetchIssuers();
     return { ok: true, reason: `Conexión correcta: Numista conoce ${new Intl.NumberFormat("es-ES").format(issuers.length)} países y emisores.` };
   } catch (err) {
-    return { ok: false, reason: err.message };
+    return { ok: false, reason: err.message, authError: err.authError };
   }
 }
 
@@ -212,10 +209,10 @@ function buildSearchSteps(clues, issuerCode) {
   });
 }
 
-async function runSearchSteps(steps, key, onStep) {
+async function runSearchSteps(steps, onStep) {
   for (const step of steps) {
     if (onStep) onStep(step.by);
-    const data = await numistaGet("/types", { category: "coin", count: String(PAGE_SIZE), ...step.params }, key);
+    const data = await numistaGet("/types", { category: "coin", count: String(PAGE_SIZE), ...step.params });
     const types = data.types || [];
     if (types.length) {
       return { candidates: types.map(fromType), strategy: step.by, total: data.count || types.length };
@@ -225,18 +222,18 @@ async function runSearchSteps(steps, key, onStep) {
 }
 
 // Devuelve { candidates, strategy, total, issuerCode }. issuerCode: el país de Numista que se ha reconocido ("" si ninguno).
-export async function findCandidates(clues, key, onStep) {
+export async function findCandidates(clues, onStep) {
   let issuerCode = "";
   if (clues.issuer || clues.issuer_en) {
     if (onStep) onStep("issuers");
-    issuerCode = matchIssuer(clues, await getIssuers(key));
+    issuerCode = matchIssuer(clues, await getIssuers());
   }
-  const result = await runSearchSteps(buildSearchSteps(clues, issuerCode), key, onStep);
+  const result = await runSearchSteps(buildSearchSteps(clues, issuerCode), onStep);
   return { ...result, issuerCode };
 }
 
-export function searchByText(text, key, onStep) {
-  return runSearchSteps([{ by: "manual", params: { q: cleanText(text) } }], key, onStep);
+export function searchByText(text, onStep) {
+  return runSearchSteps([{ by: "manual", params: { q: cleanText(text) } }], onStep);
 }
 
 // ---------- Ficha ----------
@@ -285,11 +282,11 @@ function trimType(t) {
 }
 
 // Ficha completa de una moneda. Se guarda en el móvil 30 días: volver a abrirla no gasta cupo.
-export async function getType(id, key) {
+export async function getType(id) {
   const cache = readJson(KEYS.typeCache, {});
   const hit = cache[id];
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
-  const data = trimType(await numistaGet(`/types/${encodeURIComponent(id)}`, {}, key));
+  const data = trimType(await numistaGet(`/types/${encodeURIComponent(id)}`, {}));
   cache[id] = { at: Date.now(), data };
   // Si hay demasiadas, se olvidan las más antiguas.
   const ids = Object.keys(cache).sort((a, b) => cache[b].at - cache[a].at);

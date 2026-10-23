@@ -9,8 +9,15 @@ Gemela de `vinilos` (mismo estilo y misma forma de trabajar): foto de una moneda
 - Sube la versión en **cada** push a `main`, para que el usuario compruebe en el móvil qué versión está probando.
 - Desde `1.0.0` (MVP terminado), formato semver: `1.0.<n>` para arreglos y `1.<m>.0` para funciones nuevas.
 
+## Supabase (usuario y contraseña)
+
+- Proyecto `muscledex` (`lmfdpetsqmmymbuwbziw`), compartido con otra app: todo lo de Monedas lleva el prefijo `monedas`.
+- Las llaves de Gemini y Numista son secretos de las Edge Functions (`GEMINI_KEY`, `NUMISTA_KEY`); nunca van al navegador.
+- `monedas-gemini` y `monedas-numista` (código en `supabase/functions`, desplegadas con `verify_jwt: false` porque comprueban ellas la sesión) solo dejan pasar a usuarios de la tabla `monedas_usuarios`. Devuelven la respuesta de fuera dentro de `{ status, body }`.
+- Si cambias una función, vuelve a desplegarla (y el `_shared/common.ts` con ella).
+
 ## Numista
 
 - Plan gratuito: 2.000 consultas al mes. Cada búsqueda y cada ficha gasta una; las fichas y la lista de países se guardan en el móvil 30 días para ahorrar cupo. No añadas consultas sin necesidad.
 - La búsqueda por imagen de Numista es de pago: la foto la lee Gemini y luego se busca por texto.
-- Numista sí deja que la web consulte su API directamente (CORS), pero no siempre deja enseñar sus fotos dentro de otra web. `coinImg` en `app.js` prueba varias rutas por foto (directa sin Referer, wsrv.nl, i0.wp.com, wsrv otra vez y luego la miniatura): no las quites, con ellas cargan todas.
+- La API se consulta a través de `monedas-numista`. Las fotos sí se cargan directamente, pero Numista no siempre deja enseñarlas dentro de otra web. `coinImg` en `app.js` prueba varias rutas por foto (directa sin Referer, wsrv.nl, i0.wp.com, wsrv otra vez y luego la miniatura): no las quites, con ellas cargan todas.

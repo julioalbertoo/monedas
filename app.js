@@ -1,17 +1,5 @@
-import {
-  getAiKey,
-  setAiKey,
-  clearAiKey,
-  markAiVerified,
-  getNumistaKey,
-  setNumistaKey,
-  clearNumistaKey,
-  markNumistaVerified,
-  hasTokens,
-  areTokensVerified,
-} from "./tokens.js";
+import { currentUser, signIn, signOut } from "./auth.js";
 import { CONFIG } from "./config.js";
-import { GUIDE_TEXT, isValidAiKeyFormat } from "./guide.js";
 import { testAiConnection, identify } from "./ai.js";
 import { testNumistaConnection, findCandidates, searchByText, getType, yearRange, typeUrl } from "./numista.js";
 import { prepareImage } from "./imaging.js";
@@ -37,8 +25,7 @@ const RESULT_LABELS = {
   manual: "con lo que has escrito",
 };
 
-const VIEWS = ["guide", "settings", "capture", "results", "detail", "collection"];
-const GUIDE_SCREENS = ["intro", "ai", "numista"];
+const VIEWS = ["login", "settings", "capture", "results", "detail", "collection"];
 // Pestaña que se marca en la barra inferior para cada pantalla.
 const TAB_FOR_VIEW = { capture: "capture", results: "capture", collection: "collection", settings: "settings" };
 
@@ -90,8 +77,8 @@ function showView(name) {
   for (const view of VIEWS) {
     document.getElementById(`view-${view}`).classList.toggle("active", view === name);
   }
-  // En la primera visita la guía va sin barra: antes de nada hay que conseguir las llaves.
-  document.body.classList.toggle("no-tabbar", name === "guide" && !hasTokens());
+  // Sin sesión no hay barra: antes de nada hay que entrar.
+  document.body.classList.toggle("no-tabbar", name === "login");
   for (const tab of document.querySelectorAll("#tabbar button")) {
     tab.classList.toggle("active", tab.dataset.view === tabFor(name));
   }
@@ -112,13 +99,13 @@ function restoreScroll(y) {
   requestAnimationFrame(() => window.scrollTo(0, y || 0));
 }
 
-// Muestra un error en `statusEl`; si es un problema de llaves, añade un botón para ir a Ajustes.
+// Muestra un error en `statusEl`; si es un problema de sesión, añade un botón para volver a entrar.
 function showError(statusEl, message, authError = false) {
   statusEl.textContent = `❌ ${message} `;
   if (authError) {
-    const button = el("button", "inline-link", "Revisar mis llaves en Ajustes");
+    const button = el("button", "inline-link", "Volver a entrar");
     button.type = "button";
-    button.addEventListener("click", () => showView("settings"));
+    button.addEventListener("click", logout);
     statusEl.append(button);
   }
 }
@@ -182,20 +169,44 @@ function coinImg(className, sources, alt = "", failedText = "Foto no disponible"
   return node;
 }
 
-// ---------- Guía y ajustes ----------
+// ---------- Sesión y ajustes ----------
 
-function showGuideScreen(name) {
-  for (const screen of GUIDE_SCREENS) {
-    document.getElementById(`guide-screen-${screen}`).hidden = screen !== name;
-  }
+async function showSignedIn(user) {
+  document.getElementById("settings-user").textContent = `👤 Has entrado como ${user.email}`;
+  showView("capture");
 }
 
-function openGuide() {
-  // Rellenar con lo ya guardado evita que "Guardar" en la guía borre una llave existente.
-  document.getElementById("guide-ai-input").value = getAiKey();
-  document.getElementById("guide-numista-input").value = getNumistaKey();
-  showView("guide");
-  showGuideScreen("intro");
+async function logout() {
+  await signOut();
+  document.getElementById("login-password").value = "";
+  document.getElementById("login-status").textContent = "";
+  showView("login");
+}
+
+function initLogin() {
+  const form = document.getElementById("login-form");
+  const status = document.getElementById("login-status");
+  const submit = document.getElementById("login-submit");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
+    if (!email.trim() || !password) {
+      status.textContent = "Escribe tu email y tu contraseña.";
+      return;
+    }
+    submit.disabled = true;
+    status.textContent = "Entrando...";
+    const result = await signIn(email, password).catch(() => ({ ok: false, reason: "No se pudo conectar. Comprueba tu conexión a internet." }));
+    submit.disabled = false;
+    if (!result.ok) {
+      status.textContent = `❌ ${result.reason}`;
+      return;
+    }
+    status.textContent = "";
+    document.getElementById("login-password").value = "";
+    showSignedIn(result.user);
+  });
 }
 
 // En el iPhone, al abrir el teclado la barra de abajo se sube con él y tapa la caja en la que
@@ -227,88 +238,23 @@ function initTabbar() {
   });
 }
 
-function populateKeyScreen(prefix, text) {
-  document.getElementById(`guide-${prefix}-title`).textContent = text.title;
-  document.getElementById(`guide-${prefix}-steps`).replaceChildren(...text.steps.map((step) => el("li", null, step)));
-  const link = document.getElementById(`guide-${prefix}-link`);
-  link.href = text.linkUrl;
-  link.textContent = text.linkLabel;
-  document.getElementById(`guide-${prefix}-notice`).textContent = GUIDE_TEXT.privacyNotice;
-  document.getElementById(`guide-${prefix}-paste-label`).textContent = text.pasteLabel;
-  document.getElementById(`guide-${prefix}-input`).placeholder = text.placeholder;
-  document.getElementById(`guide-${prefix}-save`).textContent = text.saveLabel;
-}
-
-function populateGuideText() {
-  document.getElementById("guide-intro-title").textContent = GUIDE_TEXT.intro.title;
-  document.getElementById("guide-intro-body").textContent = GUIDE_TEXT.intro.body;
-  document.getElementById("guide-intro-next").textContent = GUIDE_TEXT.intro.nextLabel;
-  populateKeyScreen("ai", GUIDE_TEXT.ai);
-  populateKeyScreen("numista", GUIDE_TEXT.numista);
-  document.getElementById("settings-open-guide").textContent = GUIDE_TEXT.reopenLinkLabel;
-}
-
-function initGuideNavigation() {
-  document.getElementById("guide-intro-next").addEventListener("click", () => showGuideScreen("ai"));
-  document.getElementById("guide-ai-back").addEventListener("click", () => showGuideScreen("intro"));
-
-  document.getElementById("guide-ai-save").addEventListener("click", () => {
-    const input = document.getElementById("guide-ai-input");
-    const hint = document.getElementById("guide-ai-hint");
-    hint.textContent = isValidAiKeyFormat(input.value) ? "" : GUIDE_TEXT.ai.formatHint;
-    input.value = setAiKey(input.value);
-    document.getElementById("ai-key-input").value = input.value;
-    showGuideScreen("numista");
-  });
-
-  document.getElementById("guide-numista-back").addEventListener("click", () => showGuideScreen("ai"));
-
-  document.getElementById("guide-numista-save").addEventListener("click", () => {
-    const input = document.getElementById("guide-numista-input");
-    input.value = setNumistaKey(input.value);
-    document.getElementById("numista-key-input").value = input.value;
-    showView("settings");
-  });
-}
-
 function initSettings() {
-  const aiInput = document.getElementById("ai-key-input");
-  const numistaInput = document.getElementById("numista-key-input");
-  const status = document.getElementById("settings-status");
-
-  aiInput.value = getAiKey();
-  numistaInput.value = getNumistaKey();
-
-  document.getElementById("settings-save").addEventListener("click", () => {
-    aiInput.value = setAiKey(aiInput.value);
-    numistaInput.value = setNumistaKey(numistaInput.value);
-    status.textContent = "Guardado.";
-  });
-
-  document.getElementById("settings-clear").addEventListener("click", () => {
-    clearAiKey();
-    clearNumistaKey();
-    aiInput.value = "";
-    numistaInput.value = "";
-    status.textContent = "Llaves borradas.";
-  });
-
-  document.getElementById("settings-open-guide").addEventListener("click", openGuide);
+  document.getElementById("settings-logout").addEventListener("click", logout);
 
   document.getElementById("settings-test-ai").addEventListener("click", async () => {
     const result = document.getElementById("settings-test-ai-status");
     result.textContent = "Probando...";
-    const { ok, reason } = await testAiConnection(getAiKey());
-    markAiVerified(ok);
-    result.textContent = `${ok ? "✅" : "❌"} ${reason}`;
+    const { ok, reason, authError } = await testAiConnection();
+    if (ok) result.textContent = `✅ ${reason}`;
+    else showError(result, reason, authError);
   });
 
   document.getElementById("settings-test-numista").addEventListener("click", async () => {
     const result = document.getElementById("settings-test-numista-status");
     result.textContent = "Probando...";
-    const { ok, reason } = await testNumistaConnection(getNumistaKey());
-    markNumistaVerified(ok);
-    result.textContent = `${ok ? "✅" : "❌"} ${reason}`;
+    const { ok, reason, authError } = await testNumistaConnection();
+    if (ok) result.textContent = `✅ ${reason}`;
+    else showError(result, reason, authError);
   });
 }
 
@@ -552,7 +498,7 @@ async function openDetail(candidate, { returnView = "results" } = {}) {
   const request = ++detailRequest;
   let coin = null;
   try {
-    coin = await getType(candidate.id, getNumistaKey());
+    coin = await getType(candidate.id);
     if (request === detailRequest) renderDetail(coin, photos);
   } catch (err) {
     if (request === detailRequest) {
@@ -685,7 +631,7 @@ function initResults(resetCapture) {
     searchButton.disabled = true;
     status.textContent = "Buscando en Numista...";
     try {
-      const { candidates, strategy, total } = await searchByText(text, getNumistaKey());
+      const { candidates, strategy, total } = await searchByText(text);
       if (candidates.length === 0) {
         status.textContent = `❌ No hay resultados para "${text}". Prueba con menos palabras, o con el valor en inglés (p. ej. «Peseta 1980»).`;
       } else {
@@ -818,11 +764,6 @@ function initCapture() {
 
   async function runIdentify(run) {
     if (!photos.length) return;
-    if (!hasTokens()) {
-      setBusy(false);
-      openGuide();
-      return;
-    }
     rawJson.hidden = true;
     retryButton.hidden = true;
     identified = false;
@@ -839,7 +780,7 @@ function initCapture() {
     };
     const ticker = setInterval(renderProgress, 1000);
 
-    const result = await identify(photos, getAiKey(), (model, previousFailure, retry) => {
+    const result = await identify(photos, (model, previousFailure, retry) => {
       currentModel = model;
       fallbackNote = retry
         ? `Gemini está saturado. Reintento ${retry} de 2. `
@@ -883,7 +824,7 @@ function initCapture() {
   async function searchAndShow(clues, run) {
     status.classList.add("loading");
     try {
-      const { candidates, strategy, total, issuerCode } = await findCandidates(clues, getNumistaKey(), (step) => {
+      const { candidates, strategy, total, issuerCode } = await findCandidates(clues, (step) => {
         if (run === identifyRun) status.textContent = `${SEARCH_STEP_LABELS[step] || "Buscando en Numista"}...`;
       });
       if (run !== identifyRun) return;
@@ -948,14 +889,15 @@ function initCapture() {
 
 initTabbar();
 initTypingMode();
-populateGuideText();
-initGuideNavigation();
+initLogin();
 initSettings();
 initExploreMode();
 const resetCapture = initCapture();
 initResults(resetCapture);
 initDetail();
 initHistory();
-if (areTokensVerified()) showView("capture");
-else if (hasTokens()) showView("settings");
-else openGuide();
+// Las llaves de antes ya no hacen falta: se borran del móvil.
+for (const key of CONFIG.STORAGE_KEYS.oldKeys) localStorage.removeItem(key);
+currentUser()
+  .then((user) => (user ? showSignedIn(user) : showView("login")))
+  .catch(() => showView("login"));

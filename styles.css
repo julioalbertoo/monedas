@@ -415,63 +415,6 @@ input[type="text"]:focus {
   text-decoration: underline;
 }
 
-/* ---------- Guía ---------- */
-
-.guide-screen {
-  text-align: left;
-}
-
-#guide-screen-intro {
-  text-align: center;
-}
-
-.guide-body {
-  white-space: pre-line;
-  text-align: left;
-}
-
-.step-pill {
-  display: inline-block;
-  margin: 0 0 10px;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: var(--mint);
-  color: var(--mint-text) !important;
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
-.steps {
-  counter-reset: step;
-  list-style: none;
-  padding: 0;
-  margin: 14px 0;
-}
-
-.steps li {
-  counter-increment: step;
-  position: relative;
-  padding: 2px 0 12px 40px;
-  color: var(--text);
-}
-
-.steps li::before {
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--lilac);
-  color: var(--primary-press);
-  font-weight: 800;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* ---------- Identificar ---------- */
 
 .hero {
