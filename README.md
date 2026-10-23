@@ -21,8 +21,6 @@ En la pestaña **📷 Identificar**:
 
 En cada candidato verás el anverso y el reverso, y qué pistas coinciden (✓ año, ✓ país, ✓ valor…). Si ya la tienes en **🪙 Mis monedas**, sale marcada con **Ya la tienes**. Pulsa **✓ Es esta**: se abre su ficha (valor, metal, peso, diámetro, cecas, leyendas de cada cara…) con un enlace a Numista, y se guarda en **🪙 Mis monedas**.
 
-**🧭 Modo explorador**: identifica monedas sin guardarlas en tu colección (con el tema oscuro).
-
 **Truco:** la cara con el valor suele ser común a muchos países (por ejemplo, en los euros). La otra cara trae el país y muchas veces el año.
 
 ---

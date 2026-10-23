@@ -23,11 +23,9 @@ export const CONFIG = {
     webUrl: "https://es.numista.com",
   },
   STORAGE_KEYS: {
-    // Llaves de antes de tener usuario y contraseña: se borran del móvil al abrir la app.
-    oldKeys: ["monedas_ai_key", "monedas_ai_verified", "monedas_numista_key", "monedas_numista_verified"],
+    // Datos de versiones anteriores (llaves de antes del usuario y contraseña, modo explorador): se borran del móvil al abrir la app.
+    oldKeys: ["monedas_ai_key", "monedas_ai_verified", "monedas_numista_key", "monedas_numista_verified", "monedas_explore_mode"],
     history: "monedas_history",
-    // "1" = modo explorador (tema oscuro; lo que se identifica no se guarda en «Mis monedas»).
-    exploreMode: "monedas_explore_mode",
     // Lista de países y emisores de Numista, 30 días.
     issuersCache: "monedas_issuers_cache",
     // Fichas completas de Numista, 30 días (cada consulta gasta cupo).

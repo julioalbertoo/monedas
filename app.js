@@ -284,7 +284,7 @@ function renderCard(candidate, index, owned) {
     body.append(el("p", "card-matches", candidate.matches.map((m) => `✓ ${m}`).join("  ")));
   }
   // Solo el mejor candidato lleva el botón lila: es la acción más probable.
-  const select = el("button", best ? "card-select" : "card-select secondary", exploreMode ? "🧭 Explorar esta" : "✓ Es esta");
+  const select = el("button", best ? "card-select" : "card-select secondary", "✓ Es esta");
   select.type = "button";
   select.addEventListener("click", () => openDetail(candidate));
   body.append(select);
@@ -510,12 +510,6 @@ async function openDetail(candidate, { returnView = "results" } = {}) {
 
   if (fromHistory) return;
   const alreadyOwned = isInHistory(candidate.id);
-  if (exploreMode) {
-    savedNote.textContent = alreadyOwned
-      ? "🧭 Modo explorador · 🪙 Ya la tienes en tu colección"
-      : "🧭 Modo explorador: no se ha guardado en tu colección";
-    return;
-  }
   // Si la ficha no llegó, se guarda con los datos del candidato para no perder la confirmación.
   try {
     addToHistory({
@@ -649,37 +643,6 @@ function initResults(resetCapture) {
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") runManualSearch();
   });
-}
-
-// ---------- Modo explorador ----------
-// Tema oscuro y lo que se identifica no se guarda en «Mis monedas».
-// El tema ya lo pone un script en index.html antes de pintar; aquí se sincroniza el interruptor.
-const EXPLORE_KEY = CONFIG.STORAGE_KEYS.exploreMode;
-let exploreMode = false;
-
-function setExploreMode(on) {
-  exploreMode = on;
-  if (on) document.documentElement.dataset.theme = "dark";
-  else delete document.documentElement.dataset.theme;
-  // Color de la franja de la hora en Safari: el mismo que el fondo de la cabecera.
-  document.querySelector('meta[name="theme-color"]').content = on ? "#17141f" : "#fbf6f1";
-  document.getElementById("explore-toggle").checked = on;
-  document.getElementById("identify-title").textContent = on ? "¿Qué moneda exploras?" : "¿Qué moneda tienes?";
-  try {
-    if (on) localStorage.setItem(EXPLORE_KEY, "1");
-    else localStorage.removeItem(EXPLORE_KEY);
-  } catch {
-    // Sin memoria del navegador el modo dura hasta cerrar la app.
-  }
-}
-
-function initExploreMode() {
-  let saved = false;
-  try {
-    saved = localStorage.getItem(EXPLORE_KEY) === "1";
-  } catch {}
-  setExploreMode(saved);
-  document.getElementById("explore-toggle").addEventListener("change", (event) => setExploreMode(event.target.checked));
 }
 
 // ---------- Identificar ----------
@@ -891,7 +854,6 @@ initTabbar();
 initTypingMode();
 initLogin();
 initSettings();
-initExploreMode();
 const resetCapture = initCapture();
 initResults(resetCapture);
 initDetail();
