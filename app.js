@@ -4,6 +4,7 @@ import { testAiConnection, identify } from "./ai.js";
 import { testNumistaConnection, findCandidates, searchByText, getType, yearRange, typeUrl } from "./numista.js";
 import { prepareImage } from "./imaging.js";
 import { rankCandidates } from "./scoring.js";
+import { withFlag } from "./flags.js";
 import { getHistory, addToHistory, removeFromHistory, clearHistory, isInHistory } from "./history.js";
 
 // Mensajes sencillos (la usuaria es una persona mayor): sin detalles de cómo se busca por dentro.
@@ -265,6 +266,30 @@ function coinThumbs(className, front, back) {
   return box;
 }
 
+// Metal en corto («Bimetálica: centro de níquel…» → «Bimetálica»); entero va en la lista de la ficha.
+function shortMetal(composition) {
+  // Sin la ley: «Plata (,903)» → «Plata».
+  const metal = (composition || "").split(/[:(]/)[0].trim();
+  return metal.length <= 30 ? metal : "";
+}
+
+// Pastilla con el metal. La búsqueda de Numista no lo trae: sale de la ficha, que se pide aparte
+// (1 consulta) y se guarda 30 días en el móvil, así que luego «✓ Es esta» ya no gasta.
+function metalPill(id) {
+  const pill = el("p", "card-metal");
+  pill.hidden = true;
+  getType(id)
+    .then((coin) => {
+      const metal = shortMetal(coin.composition);
+      if (metal) {
+        pill.textContent = metal;
+        pill.hidden = false;
+      }
+    })
+    .catch(() => {});
+  return pill;
+}
+
 function renderCard(candidate, index, owned) {
   const best = index === 0;
   const have = owned.has(String(candidate.id));
@@ -275,7 +300,11 @@ function renderCard(candidate, index, owned) {
   const body = el("div", "card-body");
   body.append(el("h3", null, candidate.title));
   if (have) body.append(el("p", "card-owned", "🪙 Ya la tienes"));
-  body.append(el("p", null, [candidate.issuer || "País ?", candidate.years || "Años ?"].join(" · ")));
+  const place = el("p", null, `${candidate.issuer ? withFlag(candidate.issuer) : "País ?"} · `);
+  // Los años juntos: «1759–1771» partido en dos líneas se lee mal.
+  place.append(el("span", "nowrap", candidate.years || "Años ?"));
+  body.append(place);
+  body.append(metalPill(candidate.id));
   if (candidate.matches && candidate.matches.length) {
     body.append(el("p", "card-matches", candidate.matches.map((m) => `✓ ${m}`).join("  ")));
   }
@@ -284,12 +313,6 @@ function renderCard(candidate, index, owned) {
   select.type = "button";
   select.addEventListener("click", () => openDetail(candidate));
   body.append(select);
-
-  const link = el("a", null, "Ver en Numista ↗");
-  link.href = candidate.url;
-  link.target = "_blank";
-  link.rel = "noopener";
-  body.append(link);
 
   card.append(body);
   return card;
@@ -410,13 +433,13 @@ function renderDetail(coin, photos = []) {
   nodes.push(sides);
   nodes.push(el("h2", null, coin.title));
   const years = coin.years || yearRange(coin.minYear, coin.maxYear);
-  nodes.push(el("p", "detail-meta", [coin.issuer || "País ?", years || "Años ?"].join(" · ")));
+  nodes.push(el("p", "detail-meta", [coin.issuer ? withFlag(coin.issuer) : "País ?", years || "Años ?"].join(" · ")));
 
   const chips = el("div", "detail-chips");
   if (coin.value) chips.append(el("span", "detail-chip detail-chip--main", coin.value));
   // En la etiqueta, el metal en corto ("Bimetálica: centro de níquel…" → "Bimetálica"); entero va en la lista.
-  const metal = (coin.composition || "").split(":")[0].trim();
-  if (metal && metal.length <= 30) chips.append(el("span", "detail-chip", metal));
+  const metal = shortMetal(coin.composition);
+  if (metal) chips.append(el("span", "detail-chip", metal));
   if (coin.commemorated) chips.append(el("span", "detail-chip detail-chip--soft", "Conmemorativa"));
   if (coin.demonetized) chips.append(el("span", "detail-chip detail-chip--rose", "Fuera de circulación"));
   if (chips.children.length) nodes.push(chips);
@@ -565,7 +588,7 @@ function renderHistoryItem(item) {
   open.type = "button";
   open.append(coinImg("history-cover", [item.thumb, item.reverseThumb]));
   open.append(el("span", "history-title", item.title));
-  const meta = [item.issuer, item.years].filter(Boolean).join(" · ");
+  const meta = [item.issuer && withFlag(item.issuer), item.years].filter(Boolean).join(" · ");
   if (meta) open.append(el("span", "history-meta", meta));
   open.addEventListener("click", () => openDetail(historyItemToCandidate(item), { returnView: "collection" }));
 

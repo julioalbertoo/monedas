@@ -33,7 +33,7 @@ Para usar la web solo hace falta **entrar con tu email y contraseña**. Las llav
 
 Es como un portero: tú le enseñas tu carné (usuario y contraseña) y él, que tiene las llaves, te trae lo que pides.
 
-> Numista da **2.000 consultas al mes** en el plan gratuito, para todos los usuarios juntos. Cada identificación gasta entre 1 y 3; cada ficha nueva, 1. Las fichas ya vistas y la lista de países se guardan en el móvil 30 días y no gastan cupo.
+> Numista da **2.000 consultas al mes** en el plan gratuito, para todos los usuarios juntos. Cada identificación gasta entre 1 y 3, más 1 por cada candidato que se ve en la lista (para saber su metal: hasta 5, y más si pulsas «Ver más»); cada ficha nueva, 1. Las fichas ya vistas y la lista de países se guardan en el móvil 30 días y no gastan cupo.
 
 ### Para quien gestiona la app (Supabase, proyecto Muscledex)
 
@@ -97,6 +97,7 @@ Web estática (HTML + CSS + JavaScript sin frameworks). El inicio de sesión es 
 | `ai.js` | La IA: `identify(fotos)` devuelve las pistas de la moneda (país, valor, año…) a partir de una o dos fotos. Si un modelo de Gemini falla, prueba otros. |
 | `numista.js` | Búsquedas en Numista (país + valor + año → país + valor → texto libre), lista de países y ficha de cada moneda. Guarda en el móvil lo que no cambia, para ahorrar cupo. |
 | `scoring.js` | Puntúa cada candidato según las pistas que coinciden. |
+| `flags.js` | Bandera (emoji) de cada país a partir de su nombre, sin consultas. |
 | `imaging.js` | Reduce la foto (lado largo ~1024 px) antes de enviarla a la IA. |
 | `auth.js` | Inicio y cierre de sesión (Supabase) y llamadas a las funciones `monedas-gemini` y `monedas-numista`. |
 | `supabase/functions/` | Las dos funciones del servidor: comprueban el usuario y llaman a Gemini y Numista con las llaves guardadas allí. |

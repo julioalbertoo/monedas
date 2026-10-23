@@ -620,6 +620,18 @@ input[type="text"]:focus {
   font-size: 0.95rem;
 }
 
+/* Metal de la moneda, en una pastilla. */
+.view .card-body .card-metal {
+  display: inline-block;
+  margin: 6px 6px 0 0;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--butter);
+  color: var(--butter-text);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
 .card-body a {
   display: inline-block;
   margin-top: 12px;
@@ -1070,4 +1082,8 @@ body.typing .tabbar {
   height: 26px;
   margin: 0;
   accent-color: var(--primary);
+}
+
+.nowrap {
+  white-space: nowrap;
 }
