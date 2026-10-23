@@ -480,30 +480,33 @@ async function showPrices(out, typeId, issue) {
   }
 }
 
-// «¿Cuánto vale?»: se piden los precios al pulsar, para no gastar cupo en cada ficha.
+// «¿Cuánto vale?»: los precios se piden solos al abrir la ficha (2 consultas la primera vez, luego guardados 30 días).
 // myYear: el año que leyó Gemini en la foto (o el guardado en «Mis monedas»), para elegirlo solo.
 function pricePanel(typeId, myYear) {
   const box = el("div", "panel price-panel");
   box.append(el("p", "panel-title", "💶 ¿Cuánto vale?"));
-  const button = el("button", null, "💶 Ver cuánto vale");
+  // Solo se ve si falla, para volver a intentarlo.
+  const button = el("button", "secondary", "↻ Intentarlo otra vez");
   button.type = "button";
+  button.hidden = true;
   const out = el("div");
   box.append(button, out);
-  button.addEventListener("click", async () => {
-    button.disabled = true;
-    button.textContent = "Buscando…";
+  const load = async () => {
+    button.hidden = true;
+    out.replaceChildren(el("p", "status loading", "Buscando precios…"));
     let issues;
     try {
       issues = await getIssues(typeId);
     } catch (err) {
-      button.disabled = false;
-      button.textContent = "💶 Ver cuánto vale";
+      button.hidden = false;
       const status = el("p", "status");
       showError(status, `No he podido ver los precios: ${err.message}`, err.authError);
       out.replaceChildren(status);
       return;
     }
     button.remove();
+    // Si ya se ha cerrado la ficha, no hace falta seguir.
+    if (!box.isConnected) return;
     if (!issues.length) {
       out.replaceChildren(el("p", "price-note", "Numista no tiene precios de esta moneda."));
       return;
@@ -532,7 +535,9 @@ function pricePanel(typeId, myYear) {
     }
     out.replaceChildren(prices);
     showPrices(prices, typeId, chosen);
-  });
+  };
+  button.addEventListener("click", load);
+  load();
   return box;
 }
 
