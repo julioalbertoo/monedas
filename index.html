@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Monedas</title>
+  <meta name="theme-color" content="#fbf6f1">
+  <meta name="apple-mobile-web-app-title" content="Monedas">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <!-- Pone el tema oscuro del modo explorador antes de pintar, para que no parpadee en claro. -->
+  <script>try { if (localStorage.getItem("monedas_explore_mode") === "1") document.documentElement.dataset.theme = "dark"; } catch {}</script>
+  <link rel="stylesheet" href="styles.css?v=0.1.0">
+  <!-- Al publicar, sustituye la versión en TODO este archivo; cada módulo nuevo debe añadirse aquí. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "./config.js": "./config.js?v=0.1.0",
+        "./tokens.js": "./tokens.js?v=0.1.0",
+        "./guide.js": "./guide.js?v=0.1.0",
+        "./ai.js": "./ai.js?v=0.1.0",
+        "./numista.js": "./numista.js?v=0.1.0",
+        "./imaging.js": "./imaging.js?v=0.1.0",
+        "./scoring.js": "./scoring.js?v=0.1.0",
+        "./history.js": "./history.js?v=0.1.0"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="app-header">
+    <h1><span class="logo-coin" aria-hidden="true"></span>Monedas</h1>
+    <p class="app-version">v0.1.0</p>
+  </header>
+
+  <main id="app">
+    <section id="view-guide" class="view">
+      <div id="guide-screen-intro" class="guide-screen">
+        <div class="hero-coin hero-coin--small" aria-hidden="true"></div>
+        <h2 id="guide-intro-title"></h2>
+        <p id="guide-intro-body" class="guide-body"></p>
+        <button type="button" id="guide-intro-next"></button>
+      </div>
+
+      <div id="guide-screen-ai" class="guide-screen" hidden>
+        <p class="step-pill">Paso 1 de 2</p>
+        <h2 id="guide-ai-title"></h2>
+        <ol id="guide-ai-steps" class="steps"></ol>
+        <a id="guide-ai-link" class="btn btn-soft" target="_blank" rel="noopener"></a>
+        <p id="guide-ai-notice" class="notice"></p>
+        <label id="guide-ai-paste-label" for="guide-ai-input"></label>
+        <input type="password" id="guide-ai-input">
+        <p id="guide-ai-hint" class="hint"></p>
+        <button type="button" id="guide-ai-save"></button>
+        <button type="button" id="guide-ai-back" class="ghost">← Atrás</button>
+      </div>
+
+      <div id="guide-screen-numista" class="guide-screen" hidden>
+        <p class="step-pill">Paso 2 de 2</p>
+        <h2 id="guide-numista-title"></h2>
+        <ol id="guide-numista-steps" class="steps"></ol>
+        <a id="guide-numista-link" class="btn btn-soft" target="_blank" rel="noopener"></a>
+        <p id="guide-numista-notice" class="notice"></p>
+        <label id="guide-numista-paste-label" for="guide-numista-input"></label>
+        <input type="password" id="guide-numista-input">
+        <button type="button" id="guide-numista-save"></button>
+        <button type="button" id="guide-numista-back" class="ghost">← Atrás</button>
+      </div>
+    </section>
+
+    <section id="view-settings" class="view">
+      <h2>Ajustes</h2>
+      <p class="notice">🔒 Tus llaves se guardan solo en este navegador. No las compartas ni hagas capturas de esta pantalla.</p>
+
+      <label for="ai-key-input">Llave de Google Gemini</label>
+      <input type="password" id="ai-key-input" placeholder="AIza...">
+
+      <label for="numista-key-input">Llave de Numista</label>
+      <input type="password" id="numista-key-input" placeholder="Tu llave de la API de Numista">
+
+      <button type="button" id="settings-save">Guardar</button>
+      <p id="settings-status" class="status"></p>
+
+      <div class="panel">
+        <p class="panel-title">Comprobar que funcionan</p>
+        <button type="button" id="settings-test-ai" class="secondary">Probar conexión Gemini</button>
+        <p id="settings-test-ai-status" class="status"></p>
+        <button type="button" id="settings-test-numista" class="secondary">Probar conexión Numista</button>
+        <p id="settings-test-numista-status" class="status"></p>
+      </div>
+
+      <p id="settings-open-guide" class="link-like"></p>
+      <button type="button" id="settings-clear" class="ghost danger">Borrar llaves</button>
+    </section>
+
+    <section id="view-capture" class="view">
+      <div class="hero">
+        <div class="hero-coin" aria-hidden="true"></div>
+        <h2 id="identify-title">¿Qué moneda tienes?</h2>
+        <p>Haz una foto de una cara de la moneda, de frente y con buena luz. La identifico al momento.</p>
+      </div>
+
+      <div id="capture-preview-wrap" class="preview-wrap" role="button" tabindex="0" aria-label="Buscar de nuevo con estas fotos" hidden>
+        <div id="capture-preview" class="preview-photos"></div>
+        <div class="preview-busy" aria-hidden="true"><span class="scanline"></span></div>
+        <span class="preview-again" aria-hidden="true">↻ Toca para buscar de nuevo</span>
+      </div>
+      <p id="capture-status" class="status status-card" role="status" aria-live="polite"></p>
+      <button type="button" id="capture-identify" hidden>↻ Reintentar con estas fotos</button>
+      <label class="btn btn-soft btn-mint" for="capture-side-input" id="capture-add-side" hidden>➕ Añadir la otra cara</label>
+      <pre id="capture-raw-json" class="raw-json" hidden></pre>
+
+      <label class="btn btn-primary btn-xl" for="capture-camera-input" id="capture-camera-label">📷 Hacer foto</label>
+      <input type="file" accept="image/*" capture="environment" id="capture-camera-input" class="visually-hidden">
+      <!-- Sin «capture»: el móvil deja elegir entre la cámara y la fototeca para la segunda cara. -->
+      <input type="file" accept="image/*" id="capture-side-input" class="visually-hidden">
+
+      <label class="btn btn-soft btn-peach" for="capture-gallery-input">🖼️ Elegir de la galería</label>
+      <input type="file" accept="image/*" id="capture-gallery-input" class="visually-hidden">
+
+      <label class="explore-toggle" for="explore-toggle">
+        <span class="explore-text">
+          <span class="explore-title">🧭 Modo explorador</span>
+          <span class="explore-hint">Identifica monedas sin guardarlas en tu colección</span>
+        </span>
+        <input type="checkbox" id="explore-toggle" role="switch" class="visually-hidden">
+        <span class="explore-track" aria-hidden="true"><span class="explore-knob"></span></span>
+      </label>
+    </section>
+
+    <section id="view-results" class="view">
+      <h2>¿Es alguna de estas?</h2>
+      <p id="results-summary" class="results-summary"></p>
+      <div id="results-list"></div>
+      <button type="button" id="results-more" class="secondary" hidden></button>
+
+      <label class="btn btn-soft btn-mint" for="capture-side-input" id="results-add-side" hidden>➕ Añadir la otra cara para afinar</label>
+      <button type="button" id="results-none" class="secondary">Ninguna es la mía</button>
+      <div id="results-manual" class="panel" hidden>
+        <label for="results-manual-input">Escribe el país, el valor y el año (p. ej. «España 1 peseta 1980»)</label>
+        <input type="text" id="results-manual-input" enterkeyhint="search">
+        <button type="button" id="results-manual-search">Buscar</button>
+        <p id="results-manual-status" class="status"></p>
+      </div>
+
+      <details class="results-clues">
+        <summary>Ver las pistas usadas en la búsqueda</summary>
+        <pre id="results-clues-json" class="raw-json"></pre>
+      </details>
+      <button type="button" id="results-back" class="ghost">← Probar con otra foto</button>
+    </section>
+
+    <section id="view-detail" class="view">
+      <div id="detail-content"></div>
+      <p id="detail-saved" class="saved-pill"></p>
+      <button type="button" id="detail-back" class="ghost">← Volver a los candidatos</button>
+    </section>
+
+    <section id="view-collection" class="view">
+      <h2>Mis monedas</h2>
+      <div id="collection-empty" class="empty" hidden>
+        <div class="hero-coin hero-coin--small" aria-hidden="true"></div>
+        <p>Aún no has confirmado ninguna moneda. Cuando pulses «✓ Es esta» en un candidato, aparecerá aquí.</p>
+        <button type="button" id="collection-start">📷 Identificar mi primera moneda</button>
+      </div>
+      <p id="collection-count" class="results-summary"></p>
+      <div id="history-grid" class="history-grid"></div>
+      <button type="button" id="history-clear" class="ghost danger" hidden>Borrar todas mis monedas</button>
+    </section>
+  </main>
+
+  <nav id="tabbar" class="tabbar">
+    <button type="button" data-view="capture"><span aria-hidden="true">📷</span>Identificar</button>
+    <button type="button" data-view="collection"><span aria-hidden="true">🪙</span>Mis monedas</button>
+    <button type="button" data-view="settings"><span aria-hidden="true">⚙️</span>Ajustes</button>
+  </nav>
+
+  <script type="module" src="app.js?v=0.1.0"></script>
+</body>
+</html>
