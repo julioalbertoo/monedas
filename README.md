@@ -16,10 +16,12 @@ En la pestaña **📷 Identificar**:
 | Paso | Qué pasa |
 |---|---|
 | **📷 Hacer foto** o **🖼️ Elegir de la galería** | Foto de una cara, de frente y con buena luz. Se identifica sola nada más subirla. |
-| **➕ Añadir la otra cara** | Si no sale la tuya (por ejemplo, el año está en la otra cara), añade una foto de la otra cara y se vuelve a buscar con las dos. |
-| **Ninguna es la mía** (en los resultados) | Escribe lo que se lee en la moneda: país, valor y año. |
+| **➕ Hacer foto de la otra cara** | Si no sale la tuya (por ejemplo, el año está en la otra cara), añade una foto de la otra cara y se vuelve a buscar con las dos. |
+| **✏️ Ninguna es la mía: buscar escribiendo** (en los resultados) | Escribe lo que se lee en la moneda: país, valor y año. |
 
-En cada candidato verás el anverso y el reverso, y qué pistas coinciden (✓ año, ✓ país, ✓ valor…). Si ya la tienes en **🪙 Mis monedas**, sale marcada con **Ya la tienes**. Pulsa **✓ Es esta**: se abre su ficha (valor, metal, peso, diámetro, cecas, leyendas de cada cara…) con un enlace a Numista, y se guarda en **🪙 Mis monedas**.
+En cada candidato verás el anverso y el reverso, y qué pistas coinciden (✓ año, ✓ país, ✓ valor…). Si ya la tienes en **🪙 Mis monedas**, sale marcada con **Ya la tienes**. Pulsa **✓ Es esta**: se abre su ficha (valor, metal, peso, diámetro, cecas, leyendas de cada cara…) con un enlace a Numista, y se guarda en **🪙 Mis monedas**. Para quitar una moneda de **🪙 Mis monedas**, ábrela y pulsa **🗑️ Quitar esta moneda**.
+
+La app está pensada para una persona mayor: letra grande, buen contraste, botones grandes y mensajes sin tecnicismos (lo técnico va plegado en «Detalles técnicos»). Se puede ampliar con dos dedos.
 
 **Truco:** la cara con el valor suele ser común a muchos países (por ejemplo, en los euros). La otra cara trae el país y muchas veces el año.
 

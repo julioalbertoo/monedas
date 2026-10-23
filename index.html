@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Monedas</title>
   <meta name="theme-color" content="#fbf6f1">
   <meta name="apple-mobile-web-app-title" content="Monedas">
@@ -14,18 +14,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=1.1.1">
+  <link rel="stylesheet" href="styles.css?v=1.2.0">
   <!-- Al publicar, sustituye la versión en TODO este archivo; cada módulo nuevo debe añadirse aquí. -->
   <script type="importmap">
     {
       "imports": {
-        "./config.js": "./config.js?v=1.1.1",
-        "./auth.js": "./auth.js?v=1.1.1",
-        "./ai.js": "./ai.js?v=1.1.1",
-        "./numista.js": "./numista.js?v=1.1.1",
-        "./imaging.js": "./imaging.js?v=1.1.1",
-        "./scoring.js": "./scoring.js?v=1.1.1",
-        "./history.js": "./history.js?v=1.1.1"
+        "./config.js": "./config.js?v=1.2.0",
+        "./auth.js": "./auth.js?v=1.2.0",
+        "./ai.js": "./ai.js?v=1.2.0",
+        "./numista.js": "./numista.js?v=1.2.0",
+        "./imaging.js": "./imaging.js?v=1.2.0",
+        "./scoring.js": "./scoring.js?v=1.2.0",
+        "./history.js": "./history.js?v=1.2.0"
       }
     }
   </script>
@@ -33,7 +33,7 @@
 <body>
   <header class="app-header">
     <h1><span class="logo-coin" aria-hidden="true"></span>Monedas</h1>
-    <p class="app-version">v1.1.1</p>
+    <p class="app-version">v1.2.0</p>
   </header>
 
   <main id="app">
@@ -41,13 +41,14 @@
       <div class="hero">
         <div class="hero-coin hero-coin--small" aria-hidden="true"></div>
         <h2>Bienvenido 👋</h2>
-        <p>Identifica tus monedas con una foto y mira su ficha en Numista. Entra con tu usuario.</p>
+        <p>Haz una foto a una moneda y te digo cuál es. Para empezar, escribe tu email y tu contraseña.</p>
       </div>
       <form id="login-form" class="panel" novalidate>
         <label for="login-email">Email</label>
         <input type="email" id="login-email" autocomplete="username" inputmode="email" autocapitalize="off" required>
         <label for="login-password">Contraseña</label>
         <input type="password" id="login-password" autocomplete="current-password" required>
+        <label class="password-toggle"><input type="checkbox" id="login-show-password"> Mostrar la contraseña</label>
         <button type="submit" id="login-submit">Entrar</button>
         <p id="login-status" class="status" role="status" aria-live="polite"></p>
       </form>
@@ -58,10 +59,10 @@
       <p id="settings-user" class="notice"></p>
 
       <div class="panel">
-        <p class="panel-title">Comprobar que funciona</p>
-        <button type="button" id="settings-test-ai" class="secondary">Probar conexión Gemini</button>
+        <p class="panel-title">Comprobar que todo funciona</p>
+        <button type="button" id="settings-test-ai" class="secondary">Comprobar el lector de fotos</button>
         <p id="settings-test-ai-status" class="status"></p>
-        <button type="button" id="settings-test-numista" class="secondary">Probar conexión Numista</button>
+        <button type="button" id="settings-test-numista" class="secondary">Comprobar el catálogo de monedas</button>
         <p id="settings-test-numista-status" class="status"></p>
       </div>
 
@@ -72,18 +73,21 @@
       <div class="hero">
         <div class="hero-coin" aria-hidden="true"></div>
         <h2 id="identify-title">¿Qué moneda tienes?</h2>
-        <p>Haz una foto de una cara de la moneda, de frente y con buena luz. La identifico al momento.</p>
+        <p>Pon la moneda sobre la mesa, con buena luz, y hazle una foto desde arriba.</p>
       </div>
 
       <div id="capture-preview-wrap" class="preview-wrap" role="button" tabindex="0" aria-label="Buscar de nuevo con estas fotos" hidden>
         <div id="capture-preview" class="preview-photos"></div>
         <div class="preview-busy" aria-hidden="true"><span class="scanline"></span></div>
-        <span class="preview-again" aria-hidden="true">↻ Toca para buscar de nuevo</span>
+        <span class="preview-again" aria-hidden="true">↻ Tocar para buscar otra vez</span>
       </div>
       <p id="capture-status" class="status status-card" role="status" aria-live="polite"></p>
-      <button type="button" id="capture-identify" hidden>↻ Reintentar con estas fotos</button>
-      <label class="btn btn-soft btn-mint" for="capture-side-input" id="capture-add-side" hidden>➕ Añadir la otra cara</label>
-      <pre id="capture-raw-json" class="raw-json" hidden></pre>
+      <button type="button" id="capture-identify" hidden>↻ Intentarlo otra vez</button>
+      <label class="btn btn-soft btn-mint" for="capture-side-input" id="capture-add-side" hidden>➕ Hacer foto de la otra cara</label>
+      <details id="capture-raw" class="results-clues" hidden>
+        <summary>Detalles técnicos</summary>
+        <pre id="capture-raw-json" class="raw-json"></pre>
+      </details>
 
       <label class="btn btn-primary btn-xl" for="capture-camera-input" id="capture-camera-label">📷 Hacer foto</label>
       <input type="file" accept="image/*" capture="environment" id="capture-camera-input" class="visually-hidden">
@@ -100,34 +104,36 @@
       <div id="results-list"></div>
       <button type="button" id="results-more" class="secondary" hidden></button>
 
-      <label class="btn btn-soft btn-mint" for="capture-side-input" id="results-add-side" hidden>➕ Añadir la otra cara para afinar</label>
-      <button type="button" id="results-none" class="secondary">Ninguna es la mía</button>
+      <label class="btn btn-soft btn-mint" for="capture-side-input" id="results-add-side" hidden>➕ Hacer foto de la otra cara</label>
+      <button type="button" id="results-none" class="secondary">✏️ Ninguna es la mía: buscar escribiendo</button>
       <div id="results-manual" class="panel" hidden>
-        <label for="results-manual-input">Escribe el país, el valor y el año (p. ej. «España 1 peseta 1980»)</label>
+        <label for="results-manual-input">Escribe el país, el valor y el año que se leen en la moneda. Por ejemplo: España 1 peseta 1980</label>
         <input type="text" id="results-manual-input" enterkeyhint="search">
-        <button type="button" id="results-manual-search">Buscar</button>
+        <button type="button" id="results-manual-search">🔍 Buscar</button>
         <p id="results-manual-status" class="status"></p>
       </div>
 
       <details class="results-clues">
-        <summary>Ver las pistas usadas en la búsqueda</summary>
+        <summary>Detalles técnicos</summary>
         <pre id="results-clues-json" class="raw-json"></pre>
       </details>
-      <button type="button" id="results-back" class="ghost">← Probar con otra foto</button>
+      <button type="button" id="results-back" class="ghost">← Hacer otra foto</button>
     </section>
 
     <section id="view-detail" class="view">
+      <button type="button" id="detail-back-top" class="ghost back-top">← Volver</button>
       <div id="detail-content"></div>
       <p id="detail-saved" class="saved-pill"></p>
-      <button type="button" id="detail-back" class="ghost">← Volver a los candidatos</button>
+      <button type="button" id="detail-back" class="ghost">← Volver a la lista</button>
+      <button type="button" id="detail-remove" class="ghost danger" hidden>🗑️ Quitar esta moneda</button>
     </section>
 
     <section id="view-collection" class="view">
       <h2>Mis monedas</h2>
       <div id="collection-empty" class="empty" hidden>
         <div class="hero-coin hero-coin--small" aria-hidden="true"></div>
-        <p>Aún no has confirmado ninguna moneda. Cuando pulses «✓ Es esta» en un candidato, aparecerá aquí.</p>
-        <button type="button" id="collection-start">📷 Identificar mi primera moneda</button>
+        <p>Todavía no hay ninguna. Cuando identifiques una moneda y pulses «✓ Es esta», se guardará aquí.</p>
+        <button type="button" id="collection-start">📷 Identificar una moneda</button>
       </div>
       <p id="collection-count" class="results-summary"></p>
       <div id="history-grid" class="history-grid"></div>
@@ -141,6 +147,6 @@
     <button type="button" data-view="settings"><span aria-hidden="true">⚙️</span>Ajustes</button>
   </nav>
 
-  <script type="module" src="app.js?v=1.1.1"></script>
+  <script type="module" src="app.js?v=1.2.0"></script>
 </body>
 </html>

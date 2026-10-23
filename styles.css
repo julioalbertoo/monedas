@@ -1,10 +1,11 @@
-/* Paleta clara y pastel. El lila intenso se reserva para la acción principal de cada pantalla. */
+/* Pensada para una persona mayor: letra grande, buen contraste y botones grandes y separados.
+   Paleta clara y pastel. El lila intenso se reserva para la acción principal de cada pantalla. */
 :root {
   --bg: #fbf6f1;
   --surface: #ffffff;
-  --text: #2e2a40;
-  --muted: #7a7590;
-  --line: #ece6f2;
+  --text: #221e30;
+  --muted: #4f4a63;
+  --line: #ddd5e8;
 
   --primary: #7262d8;
   --primary-press: #5f50c4;
@@ -45,8 +46,8 @@ html, body {
   padding: 0;
   color: var(--text);
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 17px;
-  line-height: 1.45;
+  font-size: 19px;
+  line-height: 1.5;
 }
 
 body {
@@ -80,7 +81,7 @@ body {
   align-items: center;
   gap: 8px;
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   line-height: 1.2;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -112,13 +113,13 @@ body {
 }
 
 .logo-coin {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
 }
 
 .hero-coin {
-  width: 132px;
-  height: 132px;
+  width: 112px;
+  height: 112px;
   margin: 4px auto 14px;
   animation: coin-flip 6s ease-in-out infinite;
   box-shadow: 0 18px 40px -16px rgba(154, 112, 20, 0.6);
@@ -156,7 +157,7 @@ body {
   display: none;
   background: var(--surface);
   border-radius: 28px;
-  padding: 22px 18px;
+  padding: 24px 18px;
   box-shadow: var(--shadow);
 }
 
@@ -171,8 +172,9 @@ body {
 }
 
 .view h2 {
-  margin: 0 0 6px;
-  font-size: 1.45rem;
+  margin: 0 0 8px;
+  font-size: 1.6rem;
+  line-height: 1.25;
   font-weight: 800;
   letter-spacing: -0.01em;
 }
@@ -190,11 +192,12 @@ button,
   justify-content: center;
   gap: 8px;
   width: 100%;
-  min-height: 52px;
+  min-height: 60px;
   padding: 14px 18px;
-  margin-top: 12px;
+  margin-top: 16px;
   font: inherit;
-  font-size: 1.02rem;
+  font-size: 1.1rem;
+  line-height: 1.25;
   font-weight: 800;
   text-align: center;
   text-decoration: none;
@@ -214,7 +217,7 @@ button:active,
 }
 
 button:disabled {
-  opacity: 0.55;
+  opacity: 0.6;
   cursor: default;
 }
 
@@ -222,19 +225,21 @@ button:focus-visible,
 .btn:focus-visible,
 input:focus-visible + .btn,
 input:focus-visible {
-  outline: 3px solid #b9adff;
+  outline: 4px solid #8f80f0;
   outline-offset: 2px;
 }
 
 .btn-xl {
-  min-height: 64px;
-  font-size: 1.15rem;
+  min-height: 80px;
+  font-size: 1.35rem;
 }
 
 button.secondary,
 .btn-soft {
   background: var(--primary-soft);
   color: var(--primary-press);
+  /* Con borde, para que se vea que es un botón y no un recuadro de color. */
+  border: 2px solid #cfc6ff;
   box-shadow: none;
 }
 
@@ -245,22 +250,26 @@ button.secondary:active,
 
 .btn-peach,
 .btn-peach:active {
+  border-color: #f4c3aa;
   background: var(--peach);
   color: var(--peach-text);
 }
 
 .btn-mint,
 .btn-mint:active {
+  border-color: #a9dfc4;
   background: var(--mint);
   color: var(--mint-text);
 }
 
+/* «Volver», «Cerrar sesión»...: con borde para que se vean como botones. */
 button.ghost {
-  min-height: 44px;
+  min-height: 56px;
+  border: 2px solid var(--line);
   background: transparent;
-  color: var(--muted);
+  color: var(--text);
   box-shadow: none;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 button.ghost:active {
@@ -268,6 +277,7 @@ button.ghost:active {
 }
 
 button.ghost.danger {
+  border-color: #f3c4d2;
   color: var(--rose-text);
 }
 
@@ -287,9 +297,9 @@ button.ghost.danger {
 
 label {
   display: block;
-  margin-top: 18px;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
 }
@@ -299,10 +309,11 @@ input[type="email"],
 input[type="text"] {
   display: block;
   width: 100%;
+  min-height: 60px;
   padding: 14px 16px;
   font: inherit;
-  font-size: 1rem;
-  border: 2px solid var(--line);
+  font-size: 1.15rem;
+  border: 2px solid #c9c0d9;
   border-radius: var(--radius-sm);
   background: #fcfbff;
   color: var(--text);
@@ -312,12 +323,12 @@ input[type="text"] {
 input[type="password"]:focus,
 input[type="email"]:focus,
 input[type="text"]:focus {
-  border-color: #b9adff;
+  border-color: var(--primary);
   outline: none;
 }
 
 .notice {
-  font-size: 0.88rem;
+  font-size: 1rem;
   background: var(--butter);
   color: var(--butter-text) !important;
   border-radius: var(--radius-sm);
@@ -328,7 +339,7 @@ input[type="text"]:focus {
   color: var(--text) !important;
   font-weight: 700;
   min-height: 1.2em;
-  margin: 10px 0 0;
+  margin: 12px 0 0;
 }
 
 .status:empty {
@@ -337,15 +348,15 @@ input[type="text"]:focus {
 }
 
 .status-card:not(:empty) {
-  padding: 12px 14px;
+  padding: 16px 18px;
   border-radius: var(--radius-sm);
   background: var(--lilac);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
 }
 
 .hint {
   color: var(--rose-text) !important;
-  font-size: 0.85rem;
+  font-size: 1rem;
   margin: 6px 0 0;
 }
 
@@ -358,7 +369,8 @@ input[type="text"]:focus {
 }
 
 .panel-title {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--text) !important;
 }
@@ -394,8 +406,10 @@ input[type="text"]:focus {
 }
 
 .hero p {
-  margin: 0 auto 6px;
-  max-width: 30ch;
+  margin: 0 auto 8px;
+  max-width: 28ch;
+  font-size: 1.1rem;
+  color: var(--text);
 }
 
 /* Con una foto cargada, la foto ocupa el sitio de la moneda decorativa. */
@@ -405,8 +419,9 @@ input[type="text"]:focus {
 
 /* Con foto, el botón de cámara deja de ser el principal: el foco pasa al resultado o a «Reintentar». */
 #view-capture.has-photo #capture-camera-label {
-  min-height: 52px;
-  font-size: 1.02rem;
+  min-height: 60px;
+  font-size: 1.1rem;
+  border: 2px solid #cfc6ff;
   background: var(--primary-soft);
   color: var(--primary-press);
   box-shadow: none;
@@ -477,13 +492,13 @@ input[type="text"]:focus {
 .preview-again {
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  bottom: 14px;
   transform: translateX(-50%);
-  padding: 6px 14px;
+  padding: 10px 18px;
   border-radius: 999px;
-  background: rgba(23, 20, 31, 0.72);
+  background: rgba(23, 20, 31, 0.8);
   color: #fff;
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 800;
   white-space: nowrap;
   pointer-events: none;
@@ -534,23 +549,25 @@ input[type="text"]:focus {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 /* ---------- Candidatos ---------- */
 
-.results-summary {
+.view .results-summary {
   margin-top: 0;
+  font-size: 1.1rem;
+  color: var(--text);
 }
 
 .card {
   position: relative;
   display: flex;
   gap: 14px;
-  margin-top: 14px;
-  padding: 14px;
+  margin-top: 22px;
+  padding: 16px 14px;
   background: #fff;
   border: 2px solid var(--line);
   border-radius: var(--radius);
@@ -564,13 +581,13 @@ input[type="text"]:focus {
 
 .card-badge {
   position: absolute;
-  top: -11px;
+  top: -14px;
   left: 14px;
-  padding: 2px 10px;
+  padding: 3px 12px;
   border-radius: 999px;
   background: var(--primary);
   color: #fff;
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   font-weight: 800;
 }
 
@@ -581,55 +598,59 @@ input[type="text"]:focus {
 
 .card-body h3 {
   margin: 0 0 4px;
-  font-size: 1rem;
+  font-size: 1.15rem;
+  line-height: 1.3;
   font-weight: 800;
 }
 
 .view .card-body p {
   margin: 2px 0;
-  font-size: 0.85rem;
+  font-size: 1rem;
+  color: var(--text);
 }
 
 .view .card-body .card-matches {
   display: inline-block;
   margin-top: 6px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 8px;
   background: var(--mint);
   color: var(--mint-text);
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: 0.95rem;
 }
 
 .card-body a {
   display: inline-block;
-  margin-top: 8px;
-  font-size: 0.85rem;
+  margin-top: 12px;
+  padding: 6px 0;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--primary);
 }
 
 .card-body .card-select {
-  min-height: 44px;
-  margin-top: 10px;
+  min-height: 56px;
+  margin-top: 12px;
   padding: 10px;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
 }
 
 .results-clues {
-  margin-top: var(--gap);
+  margin-top: 24px;
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.95rem;
 }
 
 .results-clues summary {
+  padding: 8px 0;
   cursor: pointer;
   font-weight: 700;
 }
 
 /* Anverso y reverso en pequeño en cada candidato. */
 .card-coins {
-  flex: 0 0 72px;
+  flex: 0 0 84px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -640,8 +661,8 @@ input[type="text"]:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   object-fit: contain;
   background: var(--butter);
@@ -654,7 +675,7 @@ input[type="text"]:focus {
 .history-cover.coin-empty,
 .detail-side-img.coin-empty {
   padding: 8px;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 800;
   line-height: 1.2;
   text-align: center;
@@ -665,7 +686,7 @@ input[type="text"]:focus {
 
 .detail-side-img.coin-empty {
   padding: 18px;
-  font-size: 0.85rem;
+  font-size: 1rem;
 }
 
 .detail-side-img.coin-empty {
@@ -675,7 +696,7 @@ input[type="text"]:focus {
 }
 
 .coin-tried {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   opacity: 0.8;
 }
@@ -713,32 +734,34 @@ input[type="text"]:focus {
 }
 
 .detail-side figcaption {
-  margin-top: 6px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--muted);
+  margin-top: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
 }
 
 #view-detail h2 {
-  margin: 18px 0 6px;
-  font-size: 1.3rem;
+  margin: 20px 0 6px;
+  font-size: 1.5rem;
 }
 
 .view .detail-meta {
   margin: 4px 0;
+  font-size: 1.1rem;
+  color: var(--text);
 }
 
 .detail-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0 4px;
+  gap: 8px;
+  margin: 12px 0 4px;
 }
 
 .detail-chip {
-  padding: 3px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 700;
   background: var(--lilac);
   color: var(--text);
@@ -762,10 +785,10 @@ input[type="text"]:focus {
 .detail-facts {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 6px 14px;
-  margin: 16px 0 0;
-  padding: 10px 12px;
-  font-size: 0.92rem;
+  gap: 10px 14px;
+  margin: 18px 0 0;
+  padding: 14px;
+  font-size: 1.05rem;
   background: #faf8ff;
   border-radius: var(--radius-sm);
 }
@@ -781,20 +804,49 @@ input[type="text"]:focus {
 }
 
 .detail-fold {
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
+/* Apartado plegable con aspecto de botón y una flecha que indica que se abre. */
 .detail-fold > summary {
-  cursor: pointer;
-  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 12px 16px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #faf8ff;
+  font-size: 1.1rem;
   font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.detail-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.detail-fold > summary::after {
+  content: "Ver ▾";
+  font-size: 0.95rem;
+  color: var(--primary-press);
+}
+
+.detail-fold[open] > summary {
+  margin-bottom: 10px;
+}
+
+.detail-fold[open] > summary::after {
+  content: "Cerrar ▴";
 }
 
 .view .detail-notes {
   margin: 0;
   padding: 10px 12px;
   white-space: pre-wrap;
-  font-size: 0.92rem;
+  font-size: 1.05rem;
+  color: var(--text);
   background: #faf8ff;
   border-radius: var(--radius-sm);
 }
@@ -805,8 +857,8 @@ input[type="text"]:focus {
 }
 
 .view .detail-sub {
-  margin: 10px 0 4px;
-  font-size: 0.82rem;
+  margin: 12px 0 4px;
+  font-size: 1rem;
   font-weight: 800;
 }
 
@@ -836,7 +888,7 @@ input[type="text"]:focus {
   background: var(--mint);
   color: var(--mint-text);
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
 }
 
 .saved-pill:empty {
@@ -852,9 +904,9 @@ input[type="text"]:focus {
 
 .history-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 12px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px 16px;
+  margin-top: 16px;
 }
 
 .history-item {
@@ -895,46 +947,35 @@ input[type="text"]:focus {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 0.78rem;
+  font-size: 1rem;
 }
 
 /* Los nombres de las monedas son largos ("1 Peseta - Juan Carlos I"): hasta dos líneas. */
 .history-title {
   display: -webkit-box;
-  margin-top: 6px;
+  margin-top: 8px;
   font-weight: 800;
   white-space: normal;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   line-height: 1.25;
 }
 
 .history-meta {
+  margin-top: 2px;
+  /* Entero, aunque ocupe dos líneas: los años cortados con «…» no se entienden. */
+  white-space: normal !important;
   color: var(--muted);
+  font-size: 0.92rem !important;
 }
 
-.history-item .history-remove {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 28px;
-  height: 28px;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--rose-text);
-  box-shadow: var(--shadow-sm);
-  font-size: 0.8rem;
-}
 
 
 /* ---------- Barra inferior ---------- */
 
 /* Reserva el hueco de la barra fija para que no tape el final de cada pantalla. */
 body {
-  padding-bottom: calc(68px + env(safe-area-inset-bottom));
+  padding-bottom: calc(92px + env(safe-area-inset-bottom));
 }
 
 body.no-tabbar {
@@ -947,10 +988,10 @@ body.no-tabbar {
   right: 0;
   bottom: 0;
   display: flex;
-  gap: 4px;
+  gap: 6px;
   max-width: 480px;
   margin: 0 auto;
-  padding: 4px 12px calc(4px + env(safe-area-inset-bottom));
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
   border-radius: 20px 20px 0 0;
   /* Blanco opaco: Safari en iOS 26 tiñe la franja de su barra de la URL con el color de la barra
      fija de abajo, pero solo si es opaco; con transparencia deja el beis del fondo. */
@@ -967,26 +1008,27 @@ body.typing .tabbar {
   flex: 1;
   flex-direction: column;
   gap: 0;
-  min-height: 0;
+  min-height: 68px;
   margin: 0;
-  padding: 3px 0;
-  border-radius: 999px;
+  padding: 6px 0;
+  border-radius: 18px;
   background: transparent;
   box-shadow: none;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.92rem;
   font-weight: 800;
 }
 
 .tabbar button span {
   display: block;
-  font-size: 1.1rem;
+  font-size: 1.6rem;
   line-height: 1.2;
 }
 
 .tabbar button.active {
   background: var(--primary-soft);
   color: var(--primary-press);
+  box-shadow: inset 0 0 0 2px #cfc6ff;
 }
 
 /* Moneda que ya está en «Mis monedas». */
@@ -1002,5 +1044,30 @@ body.typing .tabbar {
   background: var(--mint);
   color: var(--mint-text);
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
+}
+
+
+/* «← Volver» también arriba en la ficha, que es larga: así no hay que bajar hasta el final. */
+.view button.back-top {
+  width: auto;
+  min-height: 48px;
+  margin: 0 0 14px;
+  padding: 8px 16px;
+}
+
+.password-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.password-toggle input {
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  accent-color: var(--primary);
 }

@@ -6,23 +6,15 @@ import { prepareImage } from "./imaging.js";
 import { rankCandidates } from "./scoring.js";
 import { getHistory, addToHistory, removeFromHistory, clearHistory, isInHistory } from "./history.js";
 
+// Mensajes sencillos (la usuaria es una persona mayor): sin detalles de cómo se busca por dentro.
 const SEARCH_STEP_LABELS = {
-  issuers: "Reconociendo el país en Numista",
-  exact: "Buscando en Numista por país, valor y año",
-  issuer: "Buscando en Numista por país y valor",
-  "issuer-year": "Buscando en Numista por país y año",
-  "text-year": "Buscando en Numista por texto y año",
-  text: "Buscando en Numista por texto libre",
-  manual: "Buscando en Numista",
-};
-
-const RESULT_LABELS = {
-  exact: "por país, valor y año",
-  issuer: "por país y valor",
-  "issuer-year": "por país y año",
-  "text-year": "por texto y año",
-  text: "por texto libre",
-  manual: "con lo que has escrito",
+  issuers: "Buscando el país de tu moneda",
+  exact: "Buscando monedas parecidas",
+  issuer: "Buscando monedas parecidas",
+  "issuer-year": "Buscando monedas parecidas",
+  "text-year": "Sigo buscando, un momento",
+  text: "Sigo buscando, un momento",
+  manual: "Buscando",
 };
 
 const VIEWS = ["login", "settings", "capture", "results", "detail", "collection"];
@@ -103,7 +95,7 @@ function restoreScroll(y) {
 function showError(statusEl, message, authError = false) {
   statusEl.textContent = `❌ ${message} `;
   if (authError) {
-    const button = el("button", "inline-link", "Volver a entrar");
+    const button = el("button", "secondary", "Volver a entrar");
     button.type = "button";
     button.addEventListener("click", logout);
     statusEl.append(button);
@@ -187,6 +179,10 @@ function initLogin() {
   const form = document.getElementById("login-form");
   const status = document.getElementById("login-status");
   const submit = document.getElementById("login-submit");
+  // Ver lo que se escribe ayuda a no equivocarse con la contraseña en el móvil.
+  document.getElementById("login-show-password").addEventListener("change", (event) => {
+    document.getElementById("login-password").type = event.target.checked ? "text" : "password";
+  });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const email = document.getElementById("login-email").value;
@@ -273,7 +269,7 @@ function renderCard(candidate, index, owned) {
   const best = index === 0;
   const have = owned.has(String(candidate.id));
   const card = el("article", ["card", best && "card--best", have && "card--owned"].filter(Boolean).join(" "));
-  if (best) card.append(el("span", "card-badge", "★ Mejor coincidencia"));
+  if (best) card.append(el("span", "card-badge", "★ La más parecida"));
   card.append(coinThumbs("card-coins", candidate.thumb, candidate.reverseThumb));
 
   const body = el("div", "card-body");
@@ -308,20 +304,20 @@ const RESULTS_STEP = 10;
 // ranked: candidatos ordenados de mejor a peor. Se enseñan 5 al principio y luego de 10 en 10 con «Ver 10 más».
 function renderResults(ranked, total, strategy, clues) {
   lastClues = clues;
-  const how = RESULT_LABELS[strategy] || "";
   const summary = document.getElementById("results-summary");
   const list = document.getElementById("results-list");
   const more = document.getElementById("results-more");
   // Monedas que ya están en «Mis monedas», para marcarlas con «Ya la tienes».
   const owned = new Set(getHistory().map((item) => String(item.type_id)));
   // Numista da una sola página: si hay más, se dice de cuántas se ha elegido.
-  const found = total > ranked.length ? `${total} monedas encontradas ${how}. De las ${ranked.length} primeras,` : `${ranked.length} monedas encontradas ${how}.`;
+  const many = Math.max(total, ranked.length);
+  const found = many === 1 ? "He encontrado 1 moneda parecida." : `He encontrado ${many} monedas parecidas.`;
   let shown = 0;
   function showMore() {
     const next = ranked.slice(shown, shown + (shown ? RESULTS_STEP : RESULTS_FIRST));
     list.append(...next.map((candidate, i) => renderCard(candidate, shown + i, owned)));
     shown += next.length;
-    summary.textContent = `${found} ${total > ranked.length ? "las" : "Las"} ${shown} que mejor encajan:`;
+    summary.textContent = `${found} Mira las fotos y pulsa «✓ Es esta» en la tuya.`;
     const left = ranked.length - shown;
     more.hidden = left <= 0;
     more.textContent =
@@ -394,7 +390,7 @@ function sidePicture(sources, caption) {
     link.href = urls[0];
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.append(coinImg("detail-side-img", urls, caption, "No carga: toca para verla", true));
+    link.append(coinImg("detail-side-img", urls, caption, "No se ve: tócala para abrirla", true));
     figure.append(link);
   } else {
     figure.append(noPhoto("detail-side-img"));
@@ -408,8 +404,8 @@ function renderDetail(coin, photos = []) {
   const nodes = [];
   const sides = el("div", "detail-sides");
   sides.append(
-    sidePicture([coin.obverse?.picture, coin.obverse?.thumbnail, coin.thumb], "Anverso"),
-    sidePicture([coin.reverse?.picture, coin.reverse?.thumbnail, coin.reverseThumb], "Reverso")
+    sidePicture([coin.obverse?.picture, coin.obverse?.thumbnail, coin.thumb], "Cara (anverso)"),
+    sidePicture([coin.reverse?.picture, coin.reverse?.thumbnail, coin.reverseThumb], "Cruz (reverso)")
   );
   nodes.push(sides);
   nodes.push(el("h2", null, coin.title));
@@ -447,11 +443,11 @@ function renderDetail(coin, photos = []) {
         ["Retirada", coin.demonetized ? shortDate(coin.demonetizedDate) || "Sí" : ""],
       ])
     );
-    for (const fold of [sideFold("🪙 Anverso", coin.obverse), sideFold("🪙 Reverso", coin.reverse)]) {
+    for (const fold of [sideFold("🪙 La cara", coin.obverse), sideFold("🪙 La cruz", coin.reverse)]) {
       if (fold) nodes.push(fold);
     }
     if (coin.edge && coin.edge.lettering) {
-      nodes.push(foldable("〰️ Canto", el("p", "detail-notes detail-lettering", coin.edge.lettering)));
+      nodes.push(foldable("〰️ El canto", el("p", "detail-notes detail-lettering", coin.edge.lettering)));
     }
   }
   if (photos.length) {
@@ -470,9 +466,10 @@ function renderDetail(coin, photos = []) {
 let detailRequest = 0;
 let detailReturnView = "results";
 let detailScroll = 0;
+let detailCandidate = null;
 
 const BACK_LABELS = {
-  results: "← Volver a los candidatos",
+  results: "← Volver a la lista",
   collection: "← Volver a mis monedas",
 };
 
@@ -485,6 +482,9 @@ async function openDetail(candidate, { returnView = "results" } = {}) {
   }
   detailReturnView = returnView;
   document.getElementById("detail-back").textContent = BACK_LABELS[returnView];
+  // Quitar una moneda se hace desde su ficha: en la cuadrícula, una ✕ pequeña era fácil de tocar sin querer.
+  detailCandidate = candidate;
+  document.getElementById("detail-remove").hidden = !fromHistory;
   const savedNote = document.getElementById("detail-saved");
   savedNote.textContent = "";
   // Las fotos del usuario solo se enseñan si vienen de identificar (no se guardan en el móvil).
@@ -534,6 +534,13 @@ function detailBack() {
 
 function initDetail() {
   document.getElementById("detail-back").addEventListener("click", navBack);
+  document.getElementById("detail-back-top").addEventListener("click", navBack);
+  document.getElementById("detail-remove").addEventListener("click", () => {
+    if (!detailCandidate) return;
+    if (!window.confirm(`¿Quitar «${detailCandidate.title}» de tus monedas?`)) return;
+    removeFromHistory(detailCandidate.id);
+    navBack();
+  });
 }
 
 // ---------- Mis monedas ----------
@@ -562,16 +569,7 @@ function renderHistoryItem(item) {
   if (meta) open.append(el("span", "history-meta", meta));
   open.addEventListener("click", () => openDetail(historyItemToCandidate(item), { returnView: "collection" }));
 
-  const remove = el("button", "history-remove", "✕");
-  remove.type = "button";
-  remove.setAttribute("aria-label", `Borrar ${item.title} de tus monedas`);
-  remove.addEventListener("click", () => {
-    if (!window.confirm(`¿Borrar «${item.title}» de tus monedas? No se puede deshacer.`)) return;
-    removeFromHistory(item.type_id);
-    renderCollection();
-  });
-
-  wrapper.append(open, remove);
+  wrapper.append(open);
   return wrapper;
 }
 
@@ -623,11 +621,11 @@ function initResults(resetCapture) {
     const text = input.value.trim();
     if (!text) return;
     searchButton.disabled = true;
-    status.textContent = "Buscando en Numista...";
+    status.textContent = "Buscando...";
     try {
       const { candidates, strategy, total } = await searchByText(text);
       if (candidates.length === 0) {
-        status.textContent = `❌ No hay resultados para "${text}". Prueba con menos palabras, o con el valor en inglés (p. ej. «Peseta 1980»).`;
+        status.textContent = `❌ No he encontrado nada con «${text}». Prueba a escribir menos palabras, por ejemplo: Peseta 1980.`;
       } else {
         status.textContent = "";
         renderResults(rankCandidates(candidates, lastClues, lastIssuerCode), total, strategy, lastClues);
@@ -672,6 +670,8 @@ function initCapture() {
   const cameraLabel = document.getElementById("capture-camera-label");
   const status = document.getElementById("capture-status");
   const rawJson = document.getElementById("capture-raw-json");
+  // Los detalles técnicos van plegados: solo sirven si hay que pedir ayuda.
+  const rawBox = document.getElementById("capture-raw");
 
   // Cada foto nueva invalida lo que estuviera en marcha con la anterior.
   let identifyRun = 0;
@@ -690,16 +690,16 @@ function initCapture() {
   // addSide: la foto es la otra cara de la moneda que ya está en pantalla.
   async function handleFile(file, { addSide = false } = {}) {
     if (!file) {
-      status.textContent = "No se ha recibido ninguna foto (¿se canceló la cámara?).";
+      status.textContent = "No ha llegado ninguna foto. Vuelve a pulsar «📷 Hacer foto».";
       return;
     }
     const run = ++identifyRun;
     if (activeView() !== "capture") showView("capture");
     retryButton.hidden = true;
-    rawJson.hidden = true;
+    rawBox.hidden = true;
     identified = false;
     setBusy(true);
-    status.textContent = "Preparando la foto...";
+    status.textContent = "Preparando la foto…";
     try {
       const image = await prepareImage(file);
       if (run !== identifyRun) return;
@@ -711,7 +711,9 @@ function initCapture() {
     } catch (err) {
       if (run !== identifyRun) return;
       setBusy(false);
-      status.textContent = `❌ No se pudo preparar la imagen: ${err && err.message ? err.message : err}`;
+      status.textContent = "❌ No he podido abrir esa foto. Prueba con otra.";
+      rawJson.textContent = String(err && err.message ? err.message : err);
+      rawBox.hidden = false;
       return;
     }
     // Se identifica nada más subir la foto: el usuario no tiene que pulsar nada más.
@@ -727,29 +729,23 @@ function initCapture() {
 
   async function runIdentify(run) {
     if (!photos.length) return;
-    rawJson.hidden = true;
+    rawBox.hidden = true;
     retryButton.hidden = true;
     identified = false;
     setBusy(true);
 
-    const what = photos.length > 1 ? "las dos caras" : "la foto";
-    let currentModel = "";
+    const what = photos.length > 1 ? "las dos caras de tu moneda" : "tu moneda";
     let fallbackNote = "";
     let startedAt = Date.now();
     const renderProgress = () => {
       if (run !== identifyRun) return;
       const seconds = Math.round((Date.now() - startedAt) / 1000);
-      status.textContent = `${fallbackNote}Leyendo ${what}${currentModel ? ` con ${currentModel}` : ""}... ${seconds} s`;
+      status.textContent = `${fallbackNote}Mirando ${what}… ${seconds} s`;
     };
     const ticker = setInterval(renderProgress, 1000);
 
     const result = await identify(photos, (model, previousFailure, retry) => {
-      currentModel = model;
-      fallbackNote = retry
-        ? `Gemini está saturado. Reintento ${retry} de 2. `
-        : previousFailure
-          ? `El modelo anterior no respondió (${previousFailure}). Pruebo con otro de respaldo. `
-          : "";
+      fallbackNote = retry || previousFailure ? "Va un poco lento, sigo intentándolo. " : "";
       startedAt = Date.now();
       renderProgress();
     });
@@ -763,7 +759,7 @@ function initCapture() {
       retryButton.hidden = false;
       showError(status, result.reason, result.authError);
       rawJson.textContent = `Diagnóstico:\n${result.attempts.map((a) => `• ${a.model}: ${a.detail}`).join("\n")}`;
-      rawJson.hidden = false;
+      rawBox.hidden = false;
       return;
     }
 
@@ -795,9 +791,9 @@ function initCapture() {
       lastIssuerCode = issuerCode;
       if (candidates.length === 0) {
         const tip = photos.length === 1 ? " Prueba a añadir la otra cara," : " Prueba";
-        status.textContent = `❌ No encontré esta moneda en Numista.${tip} con otra foto más de frente o búscala escribiendo.`;
+        status.textContent = `❌ No he encontrado esta moneda.${tip} con otra foto más de frente o búscala escribiendo.`;
         rawJson.textContent = `Pistas usadas:\n${JSON.stringify(clues, null, 2)}`;
-        rawJson.hidden = false;
+        rawBox.hidden = false;
         lastClues = clues;
         resetManualSearch(clues);
         showManualFromCapture();
@@ -815,11 +811,11 @@ function initCapture() {
 
   // Sin resultados: botón para buscar escribiendo, que lleva a la pantalla de candidatos con la caja abierta.
   function showManualFromCapture() {
-    const button = el("button", "inline-link", "Buscar escribiendo");
+    const button = el("button", "secondary", "✏️ Buscar escribiendo");
     button.type = "button";
     button.addEventListener("click", () => {
       document.getElementById("results-list").replaceChildren();
-      document.getElementById("results-summary").textContent = "Escribe lo que se lee en la moneda.";
+      document.getElementById("results-summary").textContent = "Escribe lo que se lee en la moneda y pulsa «Buscar».";
       document.getElementById("results-more").hidden = true;
       document.getElementById("results-add-side").hidden = true;
       document.getElementById("results-clues-json").textContent = JSON.stringify(lastClues, null, 2);
@@ -828,7 +824,7 @@ function initCapture() {
       showView("results");
       document.getElementById("results-manual-input").focus();
     });
-    status.append(" ", button);
+    status.append(button);
   }
 
   function resetCapture() {
@@ -844,7 +840,7 @@ function initCapture() {
     cameraLabel.textContent = "📷 Hacer foto";
     retryButton.hidden = true;
     status.textContent = "";
-    rawJson.hidden = true;
+    rawBox.hidden = true;
   }
 
   return resetCapture;
