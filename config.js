@@ -30,6 +30,8 @@ export const CONFIG = {
     issuersCache: "monedas_issuers_cache",
     // Fichas completas de Numista, 30 días (cada consulta gasta cupo).
     typeCache: "monedas_type_cache",
+    // Nombres de monedas traducidos al castellano por Gemini (Numista los da en inglés).
+    titleCache: "monedas_title_es",
   },
   IMAGE: {
     maxDim: 1024,

@@ -5,6 +5,7 @@ import { testNumistaConnection, findCandidates, searchByText, getType, yearRange
 import { prepareImage } from "./imaging.js";
 import { rankCandidates } from "./scoring.js";
 import { withFlag } from "./flags.js";
+import { cachedSpanish, translateMarked } from "./translate.js";
 import { getHistory, addToHistory, removeFromHistory, clearHistory, isInHistory } from "./history.js";
 
 // Mensajes sencillos (la usuaria es una persona mayor): sin detalles de cómo se busca por dentro.
@@ -107,6 +108,14 @@ function el(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
   if (text) node.textContent = text;
+  return node;
+}
+
+// Texto de Numista que viene en inglés: sale la traducción guardada (o el inglés) y translateMarked
+// lo cambia al castellano en cuanto Gemini responde.
+function trEl(tag, className, text) {
+  const node = el(tag, className, cachedSpanish(text));
+  if (text) node.dataset.tr = text;
   return node;
 }
 
@@ -298,7 +307,7 @@ function renderCard(candidate, index, owned) {
   card.append(coinThumbs("card-coins", candidate.thumb, candidate.reverseThumb));
 
   const body = el("div", "card-body");
-  body.append(el("h3", null, candidate.title));
+  body.append(trEl("h3", null, candidate.title));
   if (have) body.append(el("p", "card-owned", "🪙 Ya la tienes"));
   const place = el("p", null, `${candidate.issuer ? withFlag(candidate.issuer) : "País ?"} · `);
   // Los años juntos: «1759–1771» partido en dos líneas se lee mal.
@@ -340,6 +349,7 @@ function renderResults(ranked, total, strategy, clues) {
     const next = ranked.slice(shown, shown + (shown ? RESULTS_STEP : RESULTS_FIRST));
     list.append(...next.map((candidate, i) => renderCard(candidate, shown + i, owned)));
     shown += next.length;
+    translateMarked(list);
     summary.textContent = `${found} Mira las fotos y pulsa «✓ Es esta» en la tuya.`;
     const left = ranked.length - shown;
     more.hidden = left <= 0;
@@ -384,10 +394,13 @@ function foldable(title, ...content) {
   return box;
 }
 
+// Datos de la ficha que Numista da en inglés.
+const TRANSLATED_FACTS = new Set(["Gobernante", "Gobernantes", "Tipo", "Serie", "Conmemora"]);
+
 function factList(rows) {
   const list = el("dl", "detail-facts");
   for (const [term, value] of rows) {
-    if (value) list.append(el("dt", null, term), el("dd", null, String(value)));
+    if (value) list.append(el("dt", null, term), TRANSLATED_FACTS.has(term) ? trEl("dd", null, String(value)) : el("dd", null, String(value)));
   }
   return list;
 }
@@ -431,7 +444,7 @@ function renderDetail(coin, photos = []) {
     sidePicture([coin.reverse?.picture, coin.reverse?.thumbnail, coin.reverseThumb], "Cruz (reverso)")
   );
   nodes.push(sides);
-  nodes.push(el("h2", null, coin.title));
+  nodes.push(trEl("h2", null, coin.title));
   const years = coin.years || yearRange(coin.minYear, coin.maxYear);
   nodes.push(el("p", "detail-meta", [coin.issuer ? withFlag(coin.issuer) : "País ?", years || "Años ?"].join(" · ")));
 
@@ -483,7 +496,9 @@ function renderDetail(coin, photos = []) {
   link.target = "_blank";
   link.rel = "noopener";
   nodes.push(link);
-  document.getElementById("detail-content").replaceChildren(...nodes);
+  const content = document.getElementById("detail-content");
+  content.replaceChildren(...nodes);
+  translateMarked(content);
 }
 
 let detailRequest = 0;
@@ -560,7 +575,7 @@ function initDetail() {
   document.getElementById("detail-back-top").addEventListener("click", navBack);
   document.getElementById("detail-remove").addEventListener("click", () => {
     if (!detailCandidate) return;
-    if (!window.confirm(`¿Quitar «${detailCandidate.title}» de tus monedas?`)) return;
+    if (!window.confirm(`¿Quitar «${cachedSpanish(detailCandidate.title)}» de tus monedas?`)) return;
     removeFromHistory(detailCandidate.id);
     navBack();
   });
@@ -587,7 +602,7 @@ function renderHistoryItem(item) {
   const open = el("button", "history-open");
   open.type = "button";
   open.append(coinImg("history-cover", [item.thumb, item.reverseThumb]));
-  open.append(el("span", "history-title", item.title));
+  open.append(trEl("span", "history-title", item.title));
   const meta = [item.issuer && withFlag(item.issuer), item.years].filter(Boolean).join(" · ");
   if (meta) open.append(el("span", "history-meta", meta));
   open.addEventListener("click", () => openDetail(historyItemToCandidate(item), { returnView: "collection" }));
@@ -606,7 +621,9 @@ function renderCollection() {
     : items.length === 1
       ? "1 moneda"
       : `${items.length} monedas`;
-  document.getElementById("history-grid").replaceChildren(...items.map(renderHistoryItem));
+  const grid = document.getElementById("history-grid");
+  grid.replaceChildren(...items.map(renderHistoryItem));
+  translateMarked(grid);
 }
 
 function initHistory() {

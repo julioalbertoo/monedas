@@ -20,5 +20,6 @@ Gemela de `vinilos` (mismo estilo y misma forma de trabajar): foto de una moneda
 
 - Plan gratuito: 2.000 consultas al mes. Cada búsqueda y cada ficha gasta una; las fichas y la lista de países se guardan en el móvil 30 días para ahorrar cupo. No añadas consultas sin necesidad.
 - La búsqueda de Numista no trae el metal: cada candidato que se enseña pide su ficha (`getType`, con caché) para la pastilla del metal. Por eso «✓ Es esta» luego no gasta.
+- Numista da los títulos en inglés aunque se pida `lang=es`: `translate.js` los traduce con Gemini (una llamada por lista, guardadas en el móvil). Los textos así se marcan con `trEl` / `data-tr`; en el historial se guarda el título original.
 - La búsqueda por imagen de Numista es de pago: la foto la lee Gemini y luego se busca por texto.
 - La API se consulta a través de `monedas-numista`. Las fotos sí se cargan directamente, pero Numista no siempre deja enseñarlas dentro de otra web. `coinImg` en `app.js` prueba varias rutas por foto (directa sin Referer, wsrv.nl, i0.wp.com, wsrv otra vez y luego la miniatura): no las quites, con ellas cargan todas.

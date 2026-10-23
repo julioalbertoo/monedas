@@ -98,6 +98,7 @@ Web estática (HTML + CSS + JavaScript sin frameworks). El inicio de sesión es 
 | `numista.js` | Búsquedas en Numista (país + valor + año → país + valor → texto libre), lista de países y ficha de cada moneda. Guarda en el móvil lo que no cambia, para ahorrar cupo. |
 | `scoring.js` | Puntúa cada candidato según las pistas que coinciden. |
 | `flags.js` | Bandera (emoji) de cada país a partir de su nombre, sin consultas. |
+| `translate.js` | Traduce al castellano con Gemini los nombres que Numista da en inglés («Ferdinand VII» → «Fernando VII»). Se guardan en el móvil: cada nombre se traduce una vez. |
 | `imaging.js` | Reduce la foto (lado largo ~1024 px) antes de enviarla a la IA. |
 | `auth.js` | Inicio y cierre de sesión (Supabase) y llamadas a las funciones `monedas-gemini` y `monedas-numista`. |
 | `supabase/functions/` | Las dos funciones del servidor: comprueban el usuario y llaman a Gemini y Numista con las llaves guardadas allí. |
