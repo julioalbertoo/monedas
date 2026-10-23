@@ -1,5 +1,5 @@
 // Intermediario de la API de Numista para Monedas: la llave vive aquí (secreto NUMISTA_KEY), nunca en el móvil.
-import { CORS, json, checkUser, wrap } from "../_shared/common.ts";
+import { CORS, json, checkUser, wrap, getKey } from "../_shared/common.ts";
 
 const BASE_URL = "https://api.numista.com/v3";
 // Solo lo que usa la app: lista de países, búsqueda y ficha.
@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   const denied = await checkUser(req);
   if (denied) return denied;
 
-  const key = Deno.env.get("NUMISTA_KEY");
+  const key = await getKey("numista");
   if (!key) return json({ error: "missing_key" }, 500);
 
   let payload: { path?: string; params?: Record<string, string> };

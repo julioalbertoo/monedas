@@ -1,5 +1,5 @@
 // Intermediario de Google Gemini para Monedas: la llave vive aquí (secreto GEMINI_KEY), nunca en el móvil.
-import { CORS, json, checkUser, wrap } from "../_shared/common.ts";
+import { CORS, json, checkUser, wrap, getKey } from "../_shared/common.ts";
 
 const CHAT_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const MODELS_URL = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
   const denied = await checkUser(req);
   if (denied) return denied;
 
-  const key = Deno.env.get("GEMINI_KEY");
+  const key = await getKey("gemini");
   if (!key) return json({ error: "missing_key" }, 500);
 
   let payload: { action?: string; body?: Record<string, unknown> };

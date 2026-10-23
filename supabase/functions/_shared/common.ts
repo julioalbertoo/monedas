@@ -38,3 +38,19 @@ export async function checkUser(req: Request): Promise<Response | null> {
 export async function wrap(response: Response): Promise<Response> {
   return json({ status: response.status, body: await response.text() });
 }
+
+// Llave de Gemini o Numista: primero el secreto de las funciones (GEMINI_KEY / NUMISTA_KEY);
+// si no está, la guardada cifrada en Vault (monedas_gemini_key / monedas_numista_key).
+const keyCache = new Map<string, string>();
+export async function getKey(name: "gemini" | "numista"): Promise<string> {
+  const fromEnv = Deno.env.get(`${name.toUpperCase()}_KEY`);
+  if (fromEnv) return fromEnv;
+  if (keyCache.has(name)) return keyCache.get(name)!;
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false },
+  });
+  const { data } = await admin.rpc("monedas_llave", { nombre: name });
+  const key = typeof data === "string" ? data : "";
+  if (key) keyCache.set(name, key);
+  return key;
+}

@@ -37,7 +37,8 @@ Es como un portero: tú le enseñas tu carné (usuario y contraseña) y él, que
 
 ### Para quien gestiona la app (Supabase, proyecto Muscledex)
 
-- **Llaves:** son los secretos `GEMINI_KEY` y `NUMISTA_KEY` de las Edge Functions (Supabase → Edge Functions → Secrets).
+- **Llaves:** están cifradas en Vault. Para cambiarlas, en el SQL Editor:
+  `select vault.update_secret((select id from vault.secrets where name = 'monedas_gemini_key'), 'LLAVE_NUEVA');` (o `monedas_numista_key`).
 - **Funciones:** `monedas-gemini` y `monedas-numista` (código en `supabase/functions`). Comprueban la sesión y que el usuario esté en la tabla `monedas_usuarios` antes de usar las llaves.
 - **Dar acceso a alguien:**
   1. Crea el usuario en Supabase → Authentication → Users → **Add user** (email y contraseña, con «Auto Confirm User»).
@@ -63,7 +64,7 @@ Debajo del título verás la versión (por ejemplo `v1.0.0`). Sirve para comprob
 |---|---|
 | "Tu sesión ha caducado" | Pulsa **Volver a entrar** y escribe tu email y contraseña. |
 | "Esta cuenta no tiene permiso para usar Monedas" | Falta añadir a ese usuario a la tabla `monedas_usuarios` (ver arriba). |
-| "La llave … guardada en el servidor no es válida" / "Falta configurar la llave en el servidor" | Revisa los secretos `GEMINI_KEY` y `NUMISTA_KEY` en Supabase. |
+| "La llave … guardada en el servidor no es válida" / "Falta configurar la llave en el servidor" | Revisa las llaves `monedas_gemini_key` y `monedas_numista_key` en Vault (Supabase). |
 | "Se ha agotado el cupo gratuito de Gemini" | Espera un rato: el cupo se renueva. |
 | "Numista dice que hay demasiadas consultas" | Espera un minuto. Si sigue, se ha gastado el cupo del mes; se renueva el día 1. |
 | "No se pudo contactar con Numista" | Comprueba la conexión a internet y vuelve a probar. |

@@ -12,7 +12,7 @@ Gemela de `vinilos` (mismo estilo y misma forma de trabajar): foto de una moneda
 ## Supabase (usuario y contraseña)
 
 - Proyecto `muscledex` (`lmfdpetsqmmymbuwbziw`), compartido con otra app: todo lo de Monedas lleva el prefijo `monedas`.
-- Las llaves de Gemini y Numista son secretos de las Edge Functions (`GEMINI_KEY`, `NUMISTA_KEY`); nunca van al navegador.
+- Las llaves de Gemini y Numista están cifradas en Vault (`monedas_gemini_key`, `monedas_numista_key`) y las funciones las leen con la función SQL `monedas_llave` (solo `service_role`). Si existen los secretos `GEMINI_KEY` / `NUMISTA_KEY`, tienen prioridad. Nunca van al navegador.
 - `monedas-gemini` y `monedas-numista` (código en `supabase/functions`, desplegadas con `verify_jwt: false` porque comprueban ellas la sesión) solo dejan pasar a usuarios de la tabla `monedas_usuarios`. Devuelven la respuesta de fuera dentro de `{ status, body }`.
 - Si cambias una función, vuelve a desplegarla (y el `_shared/common.ts` con ella).
 
