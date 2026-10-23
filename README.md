@@ -15,7 +15,7 @@ En la pestaña **📷 Identificar**:
 
 | Paso | Qué pasa |
 |---|---|
-| **📷 Hacer foto** o **🖼️ Elegir de la galería** | Foto de una cara, de frente y con buena luz. Se identifica sola nada más subirla. |
+| **📷 Hacer foto** o **🖼️ Elegir de tu galería de fotos** | Foto de una cara, de frente y con buena luz. Se identifica sola nada más subirla. |
 | **➕ Hacer foto de la otra cara** | Si no sale la tuya (por ejemplo, el año está en la otra cara), añade una foto de la otra cara y se vuelve a buscar con las dos. |
 | **✏️ Ninguna es la mía: buscar escribiendo** (en los resultados) | Escribe lo que se lee en la moneda: país, valor y año. |
 
