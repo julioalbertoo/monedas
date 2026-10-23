@@ -140,17 +140,22 @@ function img(className, src, alt = "") {
 
 // Foto de Numista. Numista puede negarse a que otras webs enseñen sus fotos, así que se piden sin decir
 // desde qué web vienen; si aun así fallan, a través de wsrv.nl (que solo recibe el enlace público de la foto),
-// y después se prueba la siguiente de la lista (p. ej. la miniatura). Si ninguna carga, sale una 🪙.
+// y después se prueba la siguiente de la lista (p. ej. la miniatura). Si ninguna carga, lo dice.
+// (No se usa el emoji 🪙: en el iPhone parece la foto de una moneda de verdad.)
 const IMAGE_PROXY = "https://wsrv.nl/?w=800&url=";
 
-function coinImg(className, sources, alt = "") {
+function noPhoto(className, text = "Sin foto") {
+  return el("span", `${className} coin-empty`, text);
+}
+
+// failedText: lo que se lee en el círculo si hay foto pero no carga.
+function coinImg(className, sources, alt = "", failedText = "Foto no disponible") {
   const urls = [];
   for (const src of sources) {
     if (!src || urls.includes(src)) continue;
     urls.push(src, `${IMAGE_PROXY}${encodeURIComponent(src)}`);
   }
-  const placeholder = () => el("span", `${className} coin-empty`, "🪙");
-  if (!urls.length) return placeholder();
+  if (!urls.length) return noPhoto(className);
   const node = el("img", className);
   node.alt = alt;
   node.loading = "lazy";
@@ -159,7 +164,7 @@ function coinImg(className, sources, alt = "") {
   node.addEventListener("error", () => {
     attempt += 1;
     if (attempt < urls.length) node.src = urls[attempt];
-    else node.replaceWith(placeholder());
+    else node.replaceWith(noPhoto(className, failedText));
   });
   node.src = urls[0];
   return node;
@@ -297,11 +302,11 @@ function initSettings() {
 
 // ---------- Candidatos ----------
 
-// Anverso y reverso en pequeño (o un 🪙 si Numista no tiene foto).
+// Anverso y reverso en pequeño (o «Sin foto» si Numista no tiene).
 function coinThumbs(className, front, back) {
   const box = el("div", className);
   const pictures = [front, back].filter(Boolean);
-  if (!pictures.length) box.append(el("span", "coin-empty", "🪙"));
+  if (!pictures.length) box.append(noPhoto("coin-thumb"));
   for (const src of pictures) box.append(coinImg("coin-thumb", [src]));
   return box;
 }
@@ -431,10 +436,10 @@ function sidePicture(sources, caption) {
     link.href = urls[0];
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.append(coinImg("detail-side-img", urls, caption));
+    link.append(coinImg("detail-side-img", urls, caption, "Foto no disponible · toca para abrirla en Numista"));
     figure.append(link);
   } else {
-    figure.append(el("span", "detail-side-img coin-empty", "🪙"));
+    figure.append(noPhoto("detail-side-img"));
   }
   figure.append(el("figcaption", null, caption));
   return figure;

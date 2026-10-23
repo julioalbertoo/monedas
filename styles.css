@@ -735,6 +735,25 @@ input[type="text"]:focus {
 }
 
 
+/* Sin foto: un círculo con texto, para que no se confunda con la foto de una moneda. */
+.coin-thumb.coin-empty,
+.history-cover.coin-empty,
+.detail-side-img.coin-empty {
+  padding: 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--butter-text);
+  border: 2px dashed currentColor;
+  box-shadow: none;
+}
+
+.detail-side-img.coin-empty {
+  padding: 18px;
+  font-size: 0.85rem;
+}
+
 /* ---------- Ficha ---------- */
 
 /* Anverso y reverso, uno al lado del otro. */
