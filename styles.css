@@ -751,6 +751,7 @@ input[type="text"]:focus {
 
 .detail-side a {
   display: block;
+  text-decoration: none;
 }
 
 .detail-side-img {

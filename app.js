@@ -138,6 +138,33 @@ function img(className, src, alt = "") {
   return node;
 }
 
+// Foto de Numista. Numista puede negarse a que otras webs enseñen sus fotos, así que se piden sin decir
+// desde qué web vienen; si aun así fallan, a través de wsrv.nl (que solo recibe el enlace público de la foto),
+// y después se prueba la siguiente de la lista (p. ej. la miniatura). Si ninguna carga, sale una 🪙.
+const IMAGE_PROXY = "https://wsrv.nl/?w=800&url=";
+
+function coinImg(className, sources, alt = "") {
+  const urls = [];
+  for (const src of sources) {
+    if (!src || urls.includes(src)) continue;
+    urls.push(src, `${IMAGE_PROXY}${encodeURIComponent(src)}`);
+  }
+  const placeholder = () => el("span", `${className} coin-empty`, "🪙");
+  if (!urls.length) return placeholder();
+  const node = el("img", className);
+  node.alt = alt;
+  node.loading = "lazy";
+  node.referrerPolicy = "no-referrer";
+  let attempt = 0;
+  node.addEventListener("error", () => {
+    attempt += 1;
+    if (attempt < urls.length) node.src = urls[attempt];
+    else node.replaceWith(placeholder());
+  });
+  node.src = urls[0];
+  return node;
+}
+
 // ---------- Guía y ajustes ----------
 
 function showGuideScreen(name) {
@@ -275,7 +302,7 @@ function coinThumbs(className, front, back) {
   const box = el("div", className);
   const pictures = [front, back].filter(Boolean);
   if (!pictures.length) box.append(el("span", "coin-empty", "🪙"));
-  for (const src of pictures) box.append(img("coin-thumb", src));
+  for (const src of pictures) box.append(coinImg("coin-thumb", [src]));
   return box;
 }
 
@@ -395,15 +422,16 @@ function sideFold(title, side) {
   return foldable(title, ...nodes);
 }
 
-// Foto grande de una cara; al tocarla se abre entera.
-function sidePicture(src, caption) {
+// Foto grande de una cara; al tocarla se abre entera. sources: la foto grande y, de reserva, la miniatura.
+function sidePicture(sources, caption) {
   const figure = el("figure", "detail-side");
-  if (src) {
+  const urls = sources.filter(Boolean);
+  if (urls.length) {
     const link = el("a");
-    link.href = src;
+    link.href = urls[0];
     link.target = "_blank";
-    link.rel = "noopener";
-    link.append(img("detail-side-img", src, caption));
+    link.rel = "noopener noreferrer";
+    link.append(coinImg("detail-side-img", urls, caption));
     figure.append(link);
   } else {
     figure.append(el("span", "detail-side-img coin-empty", "🪙"));
@@ -417,8 +445,8 @@ function renderDetail(coin, photos = []) {
   const nodes = [];
   const sides = el("div", "detail-sides");
   sides.append(
-    sidePicture(coin.obverse?.picture || coin.thumb, "Anverso"),
-    sidePicture(coin.reverse?.picture || coin.reverseThumb, "Reverso")
+    sidePicture([coin.obverse?.picture, coin.obverse?.thumbnail, coin.thumb], "Anverso"),
+    sidePicture([coin.reverse?.picture, coin.reverse?.thumbnail, coin.reverseThumb], "Reverso")
   );
   nodes.push(sides);
   nodes.push(el("h2", null, coin.title));
@@ -427,7 +455,9 @@ function renderDetail(coin, photos = []) {
 
   const chips = el("div", "detail-chips");
   if (coin.value) chips.append(el("span", "detail-chip detail-chip--main", coin.value));
-  if (coin.composition) chips.append(el("span", "detail-chip", coin.composition));
+  // En la etiqueta, el metal en corto ("Bimetálica: centro de níquel…" → "Bimetálica"); entero va en la lista.
+  const metal = (coin.composition || "").split(":")[0].trim();
+  if (metal && metal.length <= 30) chips.append(el("span", "detail-chip", metal));
   if (coin.commemorated) chips.append(el("span", "detail-chip detail-chip--soft", "Conmemorativa"));
   if (coin.demonetized) chips.append(el("span", "detail-chip detail-chip--rose", "Fuera de circulación"));
   if (chips.children.length) nodes.push(chips);
@@ -569,8 +599,7 @@ function renderHistoryItem(item) {
 
   const open = el("button", "history-open");
   open.type = "button";
-  if (item.thumb) open.append(img("history-cover", item.thumb));
-  else open.append(el("span", "history-cover", "🪙"));
+  open.append(coinImg("history-cover", [item.thumb, item.reverseThumb]));
   open.append(el("span", "history-title", item.title));
   const meta = [item.issuer, item.years].filter(Boolean).join(" · ");
   if (meta) open.append(el("span", "history-meta", meta));
