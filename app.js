@@ -508,17 +508,20 @@ function pricePanel(typeId, myYear) {
       out.replaceChildren(el("p", "price-note", "Numista no tiene precios de esta moneda."));
       return;
     }
-    const mine = issues.find((issue) => myYear && String(issue.year) === String(myYear));
-    const chosen = mine || (issues.length === 1 ? issues[0] : null);
+    // Siempre se enseña un precio: el del año de la foto o, si no se sabe, el del primer año.
+    // Mejor una tirada normal que una de cartera o de prueba, que valen más y casi nadie tiene.
+    const sameYear = issues.filter((issue) => myYear && String(issue.year) === String(myYear));
+    const pool = sameYear.length ? sameYear : issues;
+    const chosen = pool.find((issue) => !issue.special) || pool[0];
+    const mine = sameYear.length > 0;
     const prices = el("div");
     // El precio cambia mucho según el año: con varios, se deja elegir.
     if (issues.length > 1) {
       const id = `price-year-${typeId}`;
-      const label = el("label", null, mine ? "Año de tu moneda (puedes cambiarlo):" : "¿De qué año es tu moneda?");
+      const label = el("label", null, mine ? "Año de tu moneda (puedes cambiarlo):" : "Precio de este año. Si tu moneda es de otro, cámbialo:");
       label.htmlFor = id;
       const select = el("select", "price-year");
       select.id = id;
-      if (!chosen) select.append(new Option("Elige el año…", ""));
       for (const issue of issues) select.append(new Option(issue.label, issue.id, false, issue === chosen));
       select.addEventListener("change", () => {
         const issue = issues.find((i) => String(i.id) === select.value);
@@ -528,7 +531,7 @@ function pricePanel(typeId, myYear) {
       box.insertBefore(select, out);
     }
     out.replaceChildren(prices);
-    if (chosen) showPrices(prices, typeId, chosen);
+    showPrices(prices, typeId, chosen);
   });
   return box;
 }

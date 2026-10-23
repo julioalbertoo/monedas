@@ -313,14 +313,30 @@ async function cached(name, load) {
   return data;
 }
 
+// Nota de una tirada. Numista la da a veces en inglés con «(en)» delante: «(en) BU set», «(en) Proof».
+const ISSUE_NOTES = [
+  [/\bBU\b|brilliant uncirculated/i, "de cartera (BU)"],
+  [/\bproof\b|\bPP\b/i, "calidad prueba (Proof)"],
+  [/\bset\b/i, "de cartera"],
+];
+
+function issueNote(comment) {
+  const text = String(comment || "").replace(/\(\w{2}\)\s*/g, "").trim();
+  if (!text) return "";
+  const known = ISSUE_NOTES.find(([pattern]) => pattern.test(text));
+  return known ? known[1] : text;
+}
+
 // Años (tiradas) de una moneda: [{ id, year, label }]. 1 consulta.
 export function getIssues(typeId) {
-  return cached(`issues:${typeId}`, async () => {
+  // «issues2»: desde la 1.3.1 se guarda también si es una tirada especial (cartera, prueba...).
+  return cached(`issues2:${typeId}`, async () => {
     const list = await numistaGet(`/types/${encodeURIComponent(typeId)}/issues`, {});
     return (Array.isArray(list) ? list : []).map((issue) => {
       const year = issue.gregorian_year ?? issue.year ?? null;
-      const label = [year ?? "Sin fecha", issue.mint_letter && `ceca ${issue.mint_letter}`, issue.comment].filter(Boolean).join(" · ");
-      return { id: issue.id, year, label };
+      const note = issueNote(issue.comment);
+      const label = [year ?? "Sin fecha", issue.mint_letter && `ceca ${issue.mint_letter}`, note].filter(Boolean).join(" · ");
+      return { id: issue.id, year, label, special: Boolean(note) };
     });
   });
 }
